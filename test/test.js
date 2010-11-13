@@ -16,9 +16,9 @@ var subjectsMap = {};
 var subjectCount = 0;
 var tripleCount = 0;
 parser.on('statement', function (statement) {
-    if (statement.subject.value.match(/NormanHeino/)) {
+    // if (statement.subject.value.match(/NormanHeino/)) {
         util.puts(String(statement));
-    }
+    // }
     
     if (++tripleCount >= MAX_STATEMENTS) {
         parser.abort();

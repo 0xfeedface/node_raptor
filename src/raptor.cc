@@ -56,28 +56,36 @@ public:
         Handle<External> field = Handle<External>::Cast(args.Holder()->GetInternalField(0));
         raptor_statement* statement = static_cast<raptor_statement*>(field->Value());
         
-        size_t subject_string_len;
-        unsigned char* subject_string = raptor_term_as_counted_string(statement->subject, 
-                                                                      &subject_string_len);
+        raptor_iostream* iostream;
+        void* statement_string = NULL;
+        size_t statement_string_len;
+        iostream = raptor_new_iostream_to_string(statement->world, 
+                                                 &statement_string, 
+                                                 &statement_string_len, 
+                                                 NULL);
+        if (!iostream) {
+            ThrowException(String::New("Error serializing statement."));
+            return Undefined();
+        }
         
-        size_t predicate_string_len;
-        unsigned char* predicate_string = raptor_term_as_counted_string(statement->predicate, 
-                                                                        &predicate_string_len);
+        int ret_val;
+        ret_val = raptor_statement_ntriples_write(statement, iostream, 0);
+        raptor_free_iostream(iostream);
         
-        size_t object_string_len;
-        unsigned char* object_string = raptor_term_as_counted_string(statement->object, 
-                                                                     &object_string_len);
+        if (ret_val > 0) {
+            if (statement_string) {
+                free(statement_string);
+                statement_string = NULL;
+            }
+        }
         
-        size_t triple_string_len = subject_string_len 
-                                 + predicate_string_len 
-                                 + object_string_len 
-                                 + 5; // 3 spaces + '.' + '\0'
-        char* triple_string = new char[triple_string_len];
-        sprintf(triple_string, "%s %s %s .", subject_string, predicate_string, object_string);
+        Handle<String> result = String::New(reinterpret_cast<char*>(statement_string), 
+                                            statement_string_len - 1 /* remove trailing newline */);
         
-        Handle<String> result = String::New(triple_string, triple_string_len);
-        
-        delete triple_string;
+        if (statement_string) {
+            free(statement_string);
+            statement_string = NULL;
+        }
         
         return scope.Close(result);
     }
