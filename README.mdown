@@ -25,6 +25,26 @@ You can create parsers for certain syntax types like so:
         });
     });
 
+## API
+
+### Methods
+
+* `parser.parse(pathName);`
+
+    Parses file at path `pathName`.
+
+* `parser.setOption(optionName, optionValue);`
+
+    Sets several parsing options (not implemented yet).
+
+* `parser.abort();`
+
+    Aborts the parsing process; 'end' will be emitted.
+
+### Properties
+
+* `parser.name` holds the format name that was used with `raptor.newParser` (e.&thinsp;g. 'rdfxml').
+
 ## Emitted Events
 
 On the following conditions, events are emitted:
@@ -35,7 +55,7 @@ On the following conditions, events are emitted:
         // do something with statement
     });
 
-Statements are exposed with the follwoing structure:
+Statements are exposed with the following structure:
 
     var statement = {
         subject: {
@@ -58,7 +78,7 @@ Statements are exposed with the follwoing structure:
     }
 
 ### Parsing has ended
-Either by reaching `EOF`, or interrupted by calling `parser.abort()`
+Either by reaching `EOF`, or by interruption due to `parser.abort()` being called.
 
     parser.on('end', function () {
         // handle end event
@@ -70,16 +90,3 @@ Either by reaching `EOF`, or interrupted by calling `parser.abort()`
         // handle namespace event
     });
 
-## API Methods
-
-* `parser.parse(pathName);`
-
-    Parses file at path `pathName`.
-
-* `parser.setOption(optionName, optionValue);`
-
-    Sets several parsing options (not implemented yet).
-
-* `parser.abort();`
-
-    Aborts the parsing process; 'end' will be emitted.
