@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdf:RDF [
+  <!ENTITY phil "http://localhost/OntoWiki/phil/">
+  <!ENTITY owl  "http://www.w3.org/2002/07/owl#">
+  <!ENTITY rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#">
+  <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#">
+  <!ENTITY foaf "http://xmlns.com/foaf/0.1/">
+  <!ENTITY geo  "http://www.w3.org/2003/01/geo/wgs84_pos#">
+  <!ENTITY dc   "http://purl.org/dc/elements/1.1/">
+
+]>
+<rdf:RDF xml:base="&phil;"
+         xmlns:phil="&phil;"
+         xmlns:owl="&owl;"
+         xmlns:rdf="&rdf;"
+         xmlns:rdfs="&rdfs;"
+         xmlns:foaf="&foaf;"
+         xmlns:geo="&geo;"
+         xmlns:dc="&dc;">
+
+<!-- Ontology Information -->
+  <owl:Ontology rdf:about="&phil;" rdfs:label="Philosopher's Ontology">
+    <rdfs:comment>AKSW demo knowledge base about philosophers. It demonstrates various OntoWiki features such as arbitrary object hierarchies, geoinformation reasoning, semantic plug-ins and blank node usage.</rdfs:comment>
+    <owl:versionInfo>$Id$</owl:versionInfo>
+  </owl:Ontology>
+
+<!-- Classes -->
+  <owl:Class rdf:about="&phil;Philosopher">
+    <rdfs:label xml:lang="en">Philisopher</rdfs:label>
+    <rdfs:label xml:lang="de">Philisoph</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&foaf;Person"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+
+  <owl:Class rdf:about="&phil;GreekPhilosopher">
+    <rdfs:label xml:lang="en">Greek Philosopher</rdfs:label>
+    <rdfs:label xml:lang="de">Griechischer Philisoph</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;Philosopher"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;ClassicalGreekPhilosopher">
+    <rdfs:label xml:lang="en">Classical Greek Philosopher</rdfs:label>
+    <rdfs:label xml:lang="de">Klassischer Griechischer Philisoph</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;GreekPhilosopher"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;MuslimPhilosopher">
+    <rdfs:label xml:lang="en">Muslim Philosopher</rdfs:label>
+    <rdfs:label xml:lang="de">Muslimischer Philisoph</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;Philosopher"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;MediaevalPhilosopher">
+    <rdfs:label xml:lang="en">Mediaeval Philosopher</rdfs:label>
+    <rdfs:label xml:lang="de">Mittelalterlicher Philisoph</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;Philosopher"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;Location">
+    <rdfs:label xml:lang="en">Location</rdfs:label>
+    <rdfs:label xml:lang="de">Ort</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&geo;SpatialThing"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;Town">
+    <rdfs:label xml:lang="en">Ton</rdfs:label>
+    <rdfs:label xml:lang="de">Stadt</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;Location"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;Street">
+    <rdfs:label xml:lang="en">Street</rdfs:label>
+    <rdfs:label xml:lang="de">Straße</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;Town"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+  
+  <owl:Class rdf:about="&phil;StreetNumber">
+    <rdfs:label xml:lang="en">Street number</rdfs:label>
+    <rdfs:label xml:lang="de">Hausnummer</rdfs:label>
+    <rdfs:subClassOf>
+      <owl:Class rdf:about="&phil;Street"/>
+    </rdfs:subClassOf>
+  </owl:Class>
+
+<!-- Annotation Properties -->
+  <owl:AnnotationProperty rdf:about="&rdfs;comment">
+    <rdfs:label xml:lang="en">comment</rdfs:label>
+    <rdfs:label xml:lang="de">Kommentar</rdfs:label>
+  </owl:AnnotationProperty>
+  
+  <owl:AnnotationProperty rdf:about="&rdfs;label">
+    <rdfs:label xml:lang="en">label</rdfs:label>
+    <rdfs:label xml:lang="de">Bezeichner</rdfs:label>
+  </owl:AnnotationProperty>
+
+<!-- Object Properties -->
+  <owl:ObjectProperty rdf:about="&phil;influencedBy">
+    <rdfs:label xml:lang="en">was influenced by</rdfs:label>
+    <rdfs:label xml:lang="de">wurde beeinflusst durch</rdfs:label>
+    <rdfs:domain rdf:resource="&phil;Philosopher"/>
+    <rdfs:range rdf:resource="&phil;Philosopher"/>
+  </owl:ObjectProperty>
+
+  <owl:ObjectProperty rdf:about="&phil;taughtBy">
+    <rdfs:label xml:lang="en">was taught by</rdfs:label>
+    <rdfs:label xml:lang="de">wurde gelehrt von</rdfs:label>
+    <owl:subPropertyOf rdfs:resource="&phil;influencedBy"/>
+  </owl:ObjectProperty>
+  
+  <owl:ObjectProperty rdf:about="&phil;bornIn">
+    <rdfs:label xml:lang="en">was born in</rdfs:label>
+    <rdfs:label xml:lang="de">wurde geboren in</rdfs:label>
+    <rdfs:subPropertyOf rdf:resource="&foaf;based_near"/>
+    <rdfs:domain rdf:resource="&foaf;Person"/>
+    <rdfs:range rdf:resource="&phil;Location"/>
+  </owl:ObjectProperty>
+  
+  <owl:ObjectProperty rdf:about="&foaf;depiction">
+    <rdfs:label xml:lang="en">depiction</rdfs:label>
+    <rdfs:label xml:lang="de">Abbildung</rdfs:label>
+  </owl:ObjectProperty>
+
+<!-- Datatype Properties -->
+<owl:DatatypeProperty rdf:about="yearOfBirth">
+  <rdfs:label xml:lang="en">year of birth</rdfs:label>
+  <rdfs:label xml:lang="de">Geburtsjahr</rdfs:label>
+  <rdfs:domain rdf:resource="&foaf;Person"/>
+  <rdfs:range rdf:resource="&xsd;year"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="yearOfDeath">
+  <rdfs:label xml:lang="en">year of death</rdfs:label>
+  <rdfs:label xml:lang="de">Todesjahr</rdfs:label>
+  <rdfs:domain rdf:resource="&foaf;Person"/>
+  <rdfs:range rdf:resource="&xsd;year"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="&geo;lat" rdfs:label="latitude">
+  <rdfs:label xml:lang="en">latitude</rdfs:label>
+  <rdfs:label xml:lang="de">Geografische Breite</rdfs:label>
+  <rdfs:domain rdf:resource="&phil;Location"/>
+  <rdfs:range rdf:resource="&xsd;float"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="&geo;long" rdfs:label="longitude">
+  <rdfs:label xml:lang="en">latitude</rdfs:label>
+  <rdfs:label xml:lang="de">Geografische Länge</rdfs:label>
+  <rdfs:domain rdf:resource="&phil;Location"/>
+  <rdfs:range rdf:resource="&xsd;float"/>
+</owl:DatatypeProperty>
+
+<!-- Instances -->
+  <phil:ClassicalGreekPhilosopher rdf:about="Socrates">
+    <rdfs:label xml:lang="en">Socrates</rdfs:label>
+    <dc:title xml:lang="de">Sokrates</dc:title>
+    
+    <phil:yearOfBirth rdf:datatype="&xsd;integer">-470</phil:yearOfBirth>
+    <phil:yearOfDeath>-399</phil:yearOfDeath>
+    <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/commons/a/a4/Socrates_Louvre.jpg"/>
+  </phil:ClassicalGreekPhilosopher>
+  
+  <phil:ClassicalGreekPhilosopher rdf:about="Plato">
+    <rdfs:label xml:lang="en">Plato</rdfs:label>
+    <dc:title xml:lang="de">Platon</dc:title>
+    
+    <phil:yearOfBirth>-423</phil:yearOfBirth>
+    <phil:yearOfDeath>-347</phil:yearOfDeath>
+    <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/en/d/dc/Platon-2b.jpg"/>
+    <phil:taughtBy rdf:resource="Socrates"/>
+  </phil:ClassicalGreekPhilosopher>
+  
+  <phil:ClassicalGreekPhilosopher rdf:about="Aristotle">
+    <rdfs:label xml:lang="en">Aristotle</rdfs:label>
+    <dc:title xml:lang="de">Aristoteles</dc:title>
+    
+    <phil:bornIn rdf:resource="&phil;Stageira"/>
+    <phil:yearOfBirth>-384</phil:yearOfBirth>
+    <phil:yearOfDeath>-322</phil:yearOfDeath>
+    <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/commons/a/a4/Aristoteles_Louvre.jpg"/>
+    <phil:taughtBy rdf:resource="Plato"/>
+    <phil:influencedBy rdf:resource="Socrates"/>
+  </phil:ClassicalGreekPhilosopher>
+  
+  <phil:MuslimPhilosopher rdf:about="Averroes">
+    <rdfs:label xml:lang="en">Averroes</rdfs:label>
+    <dc:title xml:lang="de">Averroes</dc:title>
+    
+    <!-- note the testing of IRIs here -->
+    <!-- <phil:bornIn rdf:resource="&phil;Córdoba"/> -->
+    <phil:bornIn rdf:resource="&phil;Cordoba"/>
+    <phil:yearOfBirth>1126</phil:yearOfBirth>
+    <phil:yearOfDeath>1198</phil:yearOfDeath>
+    <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/commons/8/82/AverroesColor.jpg"/>
+  </phil:MuslimPhilosopher>
+  
+  <phil:MediaevalPhilosopher rdf:about="ThomasAquinas">
+    <rdfs:label xml:lang="en">Thomas Aquinas</rdfs:label>
+    <dc:title xml:lang="de">Thomas von Aquin</dc:title>
+    
+    <phil:bornIn rdf:resource="&phil;Roccasecca"/>
+    <phil:yearOfBirth>1225</phil:yearOfBirth>
+    <phil:yearOfDeath>1275</phil:yearOfDeath>
+    <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/commons/e/e3/St-thomas-aquinas.jpg"/>
+    <phil:influencedBy rdf:resource="Aristotle"/>
+    <phil:influencedBy rdf:resource="Averroes"/>
+  </phil:MediaevalPhilosopher>
+  
+  <phil:Location rdf:about="&phil;Stageira" dc:title="Stageira">
+    <foaf:based_near>
+      <geo:Point>
+        <geo:lat>40.530278</geo:lat>
+        <geo:long>23.751389</geo:long>
+      </geo:Point>
+    </foaf:based_near>
+  </phil:Location>
+  
+  <phil:Location rdf:about="&phil;Cordoba" rdfs:label="Córdoba">
+  <!-- <phil:Location rdf:about="&phil;Córdoba" rdfs:label="Córdoba"> -->
+    <foaf:based_near>
+      <geo:Point>
+        <geo:lat>37.883333</geo:lat>
+        <geo:long>-4.766667</geo:long>
+      </geo:Point>
+    </foaf:based_near>
+  </phil:Location>
+  
+  <phil:Location rdf:about="&phil;Roccasecca" rdfs:label="Roccasecca">
+    <foaf:based_near>
+      <geo:Point>
+      <geo:lat>41.55</geo:lat>
+      <geo:long>13.666667</geo:long>
+      </geo:Point>
+    </foaf:based_near>
+  </phil:Location>
+
+</rdf:RDF>

@@ -1,0 +1,85 @@
+# Raptor RDF parser and serializer bindings for Node.js
+
+Experimental, use at own risk!
+
+[Raptor](http://librdf.org/raptor/) is a mature RDF parsing and serializing library written in C by Dave Beckett. It is part of Redland, the RDF handling and storage library.
+
+These bindings support [raptor 2](http://librdf.org/raptor/api/) only (v1.9.0 or greater); `libraptor` needs to be installed on your system. Set `RAPTOR_PREFIX` in  `wscript` file accordingly.
+
+# General Usage
+
+Include raptor bindings with
+
+    var raptor = require('raptor');
+
+You can create parsers for certain syntax types like so:
+
+    var parser = raptor.newParser('rdfxml');
+
+`newParser` accepts a callback as second parameter where parsing options can be set.
+
+    raptor.newParser('rdfxml', function (parser) {
+        parser.setOption('foo', 'bar');
+        process.nextTick(function () {
+            parser.parse('/Users/norman/rdf/foaf.rdf');
+        });
+    });
+
+# Emitted Events
+
+On the following conditions, events are emitted:
+
+## A new statement was parsed
+    
+    parser.on('statement', function (statement) {
+        // do something with statement
+    });
+
+Statements are exposed with the follwoing structure:
+
+    var statement = {
+        subject: {
+            type: 'uri',                                 /* 'uri' or 'bnode' */
+            value: 'http://example.com/exampleResource'
+        }, 
+        predicate: {
+            type: 'uri',                                     /* always 'uri' */
+            value: 'http://example.com/exampleProperty'
+        }, 
+        object: {
+            type: 'typed-literal',                         /* 'uri', 'literal', 
+                                                 'typed-literal', or 'bnode' */
+            value: 'An example literal value', 
+            datatype: 'http://www.w3.org/2001/XMLSchema#string'
+        }, 
+        toString: function () {
+                                     /* return statement as N-triples string */
+        }
+    }
+
+## Parsing has ended
+Either by reaching `EOF`, or interrupted by calling `parser.abort()`
+
+    parser.on('end', function () {
+        // handle end event
+    });
+
+## A namespace has been declared
+
+    parser.on('namespace', function (prefix, namespaceURI) {
+        // handle namespace event
+    });
+
+# API Methods
+
+* `parser.parse(pathName);`
+
+    Parses file at path `pathName`.
+
+* `parser.setOption(optionName, optionValue);`
+
+    Sets several parsing options (not implemented yet).
+
+* `parser.abort();`
+
+    Aborts the parsing process; 'end' will be emitted.
