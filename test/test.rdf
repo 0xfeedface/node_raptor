@@ -170,7 +170,7 @@
     <rdfs:label xml:lang="en">Socrates</rdfs:label>
     <dc:title xml:lang="de">Sokrates</dc:title>
     
-    <phil:yearOfBirth rdf:datatype="&xsd;integer">-470</phil:yearOfBirth>
+    <phil:yearOfBirth datatype="&xsd;integer">-470</phil:yearOfBirth>
     <phil:yearOfDeath>-399</phil:yearOfDeath>
     <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/commons/a/a4/Socrates_Louvre.jpg"/>
   </phil:ClassicalGreekPhilosopher>

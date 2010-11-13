@@ -90,3 +90,12 @@ Either by reaching `EOF`, or by interruption due to `parser.abort()` being calle
         // handle namespace event
     });
 
+### A message has been retrieved
+
+    parser.on('message', function (type, message, code) {
+        // log errors and warnings synchronously
+        if (type == 'error' || type == 'warning') {
+            util.log(type.toUpperCase() + ': ' + message + ' (' + code + ')');
+        }
+    });
+

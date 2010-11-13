@@ -1,4 +1,4 @@
-const MAX_STATEMENTS = 10000;
+const MAX_STATEMENTS = 1000000;
 
 var util    = require('util'), 
     raptor  = require('./../build/default/raptor');
@@ -16,8 +16,8 @@ var subjectsMap = {};
 var subjectCount = 0;
 var tripleCount = 0;
 parser.on('statement', function (statement) {
-    // if (statement.subject.value.match(/NormanHeino/)) {
-        util.puts(String(statement));
+    // if (statement.subject.type == 'bnode') {
+    //     util.puts(statement);
     // }
     
     if (++tripleCount >= MAX_STATEMENTS) {
@@ -25,15 +25,21 @@ parser.on('statement', function (statement) {
     }
 });
 
-var namespaces = {};
-parser.on('namespace', function (prefix, uri) {
-    if (!(prefix in namespaces)) {
-        namespaces[prefix] = uri;
+parser.on('message', function (type, message, code) {
+    if (type == 'error' || type == 'warning') {
+        util.log(type.toUpperCase() + ': ' + message + ' (' + code + ')');
     }
 });
 
+var namespaces = {};
+// parser.on('namespace', function (prefix, uri) {
+//     if (!(prefix in namespaces)) {
+//         namespaces[prefix] = uri;
+//     }
+// });
+
 parser.on('end', function () {
-    util.puts(tripleCount + ' statements parsed.');
+    // util.puts(tripleCount + ' statements parsed.');
     
     if (subjectsMap && subjectCount) {
         util.puts(subjectCount + ' distinct predicates found.');

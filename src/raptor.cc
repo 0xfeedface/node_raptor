@@ -7,20 +7,26 @@
 using namespace v8;
 using namespace node;
 
-static Persistent<String> subject_symbol   = NODE_PSYMBOL("subject");
-static Persistent<String> predicate_symbol = NODE_PSYMBOL("predicate");
-static Persistent<String> object_symbol    = NODE_PSYMBOL("object");
-static Persistent<String> type_symbol      = NODE_PSYMBOL("type");
-static Persistent<String> value_symbol     = NODE_PSYMBOL("value");
-static Persistent<String> uri_symbol       = NODE_PSYMBOL("uri");
-static Persistent<String> literal_symbol   = NODE_PSYMBOL("literal");
-static Persistent<String> tliteral_symbol  = NODE_PSYMBOL("typed-literal");
-static Persistent<String> bnode_symbol     = NODE_PSYMBOL("bnode");
-static Persistent<String> dtype_symbol     = NODE_PSYMBOL("datatype");
-static Persistent<String> lang_symbol      = NODE_PSYMBOL("lang");
-static Persistent<String> statement_symbol = NODE_PSYMBOL("statement");
-static Persistent<String> namespace_symbol = NODE_PSYMBOL("namespace");
-static Persistent<String> end_symbol       = NODE_PSYMBOL("end");
+static Persistent<String> subject_symbol  = NODE_PSYMBOL("subject");
+static Persistent<String> pred_symbol     = NODE_PSYMBOL("predicate");
+static Persistent<String> object_symbol   = NODE_PSYMBOL("object");
+static Persistent<String> type_symbol     = NODE_PSYMBOL("type");
+static Persistent<String> value_symbol    = NODE_PSYMBOL("value");
+static Persistent<String> uri_symbol      = NODE_PSYMBOL("uri");
+static Persistent<String> literal_symbol  = NODE_PSYMBOL("literal");
+static Persistent<String> tliteral_symbol = NODE_PSYMBOL("typed-literal");
+static Persistent<String> bnode_symbol    = NODE_PSYMBOL("bnode");
+static Persistent<String> dtype_symbol    = NODE_PSYMBOL("datatype");
+static Persistent<String> lang_symbol     = NODE_PSYMBOL("lang");
+static Persistent<String> stmt_symbol     = NODE_PSYMBOL("statement");
+static Persistent<String> nmspc_symbol    = NODE_PSYMBOL("namespace");
+static Persistent<String> message_symbol  = NODE_PSYMBOL("message");
+static Persistent<String> end_symbol      = NODE_PSYMBOL("end");
+static Persistent<String> debug_symbol    = NODE_PSYMBOL("debug");
+static Persistent<String> info_symbol     = NODE_PSYMBOL("info");
+static Persistent<String> warn_symbol     = NODE_PSYMBOL("warning");
+static Persistent<String> error_symbol    = NODE_PSYMBOL("error");
+static Persistent<String> fatal_symbol    = NODE_PSYMBOL("fatal");
 
 static raptor_world* world = raptor_new_world();
 
@@ -36,7 +42,7 @@ public:
             Handle<ObjectTemplate> t = ObjectTemplate::New();
             t->SetInternalFieldCount(1);
             t->SetAccessor(subject_symbol, SubjectAccessor);
-            t->SetAccessor(predicate_symbol, PredicateAccessor);
+            t->SetAccessor(pred_symbol, PredicateAccessor);
             t->SetAccessor(object_symbol, ObjectAccessor);
             
             NODE_SET_METHOD(t, "toString", ToString);
@@ -321,6 +327,11 @@ public:
         p->NamespaceHandler(nspace);
     }
     
+    static void CallbackWrapper(void *user_data, raptor_log_message* message) {
+        Parser *p = static_cast<Parser*>(user_data);
+        p->LogMessageHandler(message);
+    }
+    
     Parser(const char* name) {
         // keep parser name; actual parser created lazily
         parser_name_ = new char[strlen(name)];
@@ -330,6 +341,7 @@ public:
     ~Parser() {
         raptor_free_parser(parser_);
         delete parser_name_;
+        raptor_world_set_log_handler(world, NULL, NULL);
     }
 protected:
     raptor_parser* parser_;
@@ -347,6 +359,8 @@ protected:
         parser_ = parser;
         raptor_parser_set_statement_handler(parser, this, Parser::CallbackWrapper);
         raptor_parser_set_namespace_handler(parser, this, Parser::CallbackWrapper);
+        
+        raptor_world_set_log_handler(world, this, Parser::CallbackWrapper);
         
         uint8_t* file_uri_string = raptor_uri_filename_to_uri_string(filename);
         raptor_uri* file_uri = raptor_new_uri(world, file_uri_string);
@@ -404,7 +418,7 @@ protected:
         Handle<Value> args[1];
         args[0] = statement_instance;
         
-        Emit(statement_symbol, 1, args);
+        Emit(stmt_symbol, 1, args);
     }
     
     void NamespaceHandler(raptor_namespace *nspace) {
@@ -424,7 +438,37 @@ protected:
             raptor_free_memory(namespace_uri_string);
         }
         
-        Emit(namespace_symbol, 2, args);
+        Emit(nmspc_symbol, 2, args);
+    }
+    
+    void LogMessageHandler(raptor_log_message* message) {
+        HandleScope scope;
+        
+        Handle<String> type;
+        switch (message->level) {
+        case RAPTOR_LOG_LEVEL_DEBUG:
+            type = debug_symbol;
+            break;
+        case RAPTOR_LOG_LEVEL_INFO:
+            type = info_symbol;
+            break;
+        case RAPTOR_LOG_LEVEL_WARN:
+            type = warn_symbol;
+            break;
+        case RAPTOR_LOG_LEVEL_ERROR:
+            type = error_symbol;
+            break;
+        case RAPTOR_LOG_LEVEL_FATAL:
+            type = fatal_symbol;
+            break;
+        }
+        
+        Handle<Value> args[3];
+        args[0] = type;
+        args[1] = String::New(message->text);
+        args[2] = Integer::New(message->code);
+        
+        Emit(message_symbol, 3, args);
     }
 };
 
