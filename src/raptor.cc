@@ -62,7 +62,7 @@ public:
         iostream = raptor_new_iostream_to_string(statement->world, 
                                                  &statement_string, 
                                                  &statement_string_len, 
-                                                 NULL);
+                                                 malloc);
         if (!iostream) {
             ThrowException(String::New("Error serializing statement."));
             return Undefined();
@@ -79,10 +79,10 @@ public:
             }
         }
         
-        Handle<String> result = String::New(reinterpret_cast<char*>(statement_string), 
-                                            statement_string_len - 1 /* remove trailing newline */);
-        
+        Handle<String> result;
         if (statement_string) {
+            result = String::New(reinterpret_cast<char*>(statement_string), 
+                                 statement_string_len - 1 /* remove trailing newline */);
             free(statement_string);
             statement_string = NULL;
         }
@@ -180,6 +180,11 @@ public:
                 raptor_uri* datatype_uri = literal_value->datatype;
                 unsigned char* datatype_uri_string = raptor_uri_to_string(datatype_uri);
                 result->Set(dtype_symbol, String::New(reinterpret_cast<char*>(datatype_uri_string)));
+                if (datatype_uri_string) {
+                    raptor_free_memory(datatype_uri_string);
+                    datatype_uri_string = NULL;
+                }
+                
                 
                 type = tliteral_symbol;
             } else if (literal_value->language) {
@@ -345,8 +350,17 @@ protected:
         
         uint8_t* file_uri_string = raptor_uri_filename_to_uri_string(filename);
         raptor_uri* file_uri = raptor_new_uri(world, file_uri_string);
-        raptor_parser_parse_file(parser, file_uri, NULL);
-        raptor_free_uri(file_uri);
+        
+        if (file_uri) {
+            raptor_parser_parse_file(parser, file_uri, NULL);
+            raptor_free_uri(file_uri);
+            file_uri = NULL;
+        }
+        
+        if (file_uri_string) {
+            raptor_free_memory(file_uri_string);
+        }
+
         
         Emit(end_symbol, 0, NULL);
     }
@@ -383,7 +397,8 @@ protected:
         
         // external objects needs to be copied
         // FIXME: probably leakes
-        Handle<External> statement_instance_ptr = External::New(raptor_statement_copy(statement));
+        raptor_statement* statement_copy = raptor_statement_copy(statement);
+        Handle<External> statement_instance_ptr = External::New(statement_copy);
         statement_instance->SetInternalField(0, statement_instance_ptr);
         
         Handle<Value> args[1];
@@ -405,9 +420,11 @@ protected:
         args[0] = String::New(reinterpret_cast<const char*>(namespace_prefix), length);
         args[1] = String::New(reinterpret_cast<const char*>(namespace_uri_string));
         
-        Emit(namespace_symbol, 2, args);
+        if (namespace_uri_string) {
+            raptor_free_memory(namespace_uri_string);
+        }
         
-        raptor_free_memory(namespace_uri_string);
+        Emit(namespace_symbol, 2, args);
     }
 };
 
