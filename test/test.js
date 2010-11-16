@@ -3,10 +3,13 @@ const MAX_STATEMENTS = 1000000;
 var util    = require('util'), 
     raptor  = require('./../build/default/raptor');
 
+var time;
+
 var parser = raptor.newParser('rdfxml', function (p) {
     // start parsing when all other callbacks are in place
     process.nextTick(function () {
         if (process.argv.length > 2) {
+            time = Date.now();
             p.parse(process.argv[2]);
         }
     });
@@ -25,11 +28,11 @@ parser.on('statement', function (statement) {
     }
 });
 
-parser.on('message', function (type, message, code) {
-    if (type == 'error' || type == 'warning') {
-        util.log(type.toUpperCase() + ': ' + message + ' (' + code + ')');
-    }
-});
+// parser.on('message', function (type, message, code) {
+//     if (type == 'error' || type == 'warning') {
+//         util.log(type.toUpperCase() + ': ' + message + ' (' + code + ')');
+//     }
+// });
 
 var namespaces = {};
 // parser.on('namespace', function (prefix, uri) {
@@ -40,6 +43,7 @@ var namespaces = {};
 
 parser.on('end', function () {
     util.puts(tripleCount + ' statements parsed.');
+    util.puts('Parsing took ' + (Date.now() - time) + ' ms.');
     
     // if (subjectsMap && subjectCount) {
     //     util.puts(subjectCount + ' distinct predicates found.');
