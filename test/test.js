@@ -39,11 +39,11 @@ var namespaces = {};
 // });
 
 parser.on('end', function () {
-    // util.puts(tripleCount + ' statements parsed.');
+    util.puts(tripleCount + ' statements parsed.');
     
-    if (subjectsMap && subjectCount) {
-        util.puts(subjectCount + ' distinct predicates found.');
-    }
+    // if (subjectsMap && subjectCount) {
+    //     util.puts(subjectCount + ' distinct predicates found.');
+    // }
     
     // util.puts('Namespaces: ' + util.inspect(namespaces));
 });
