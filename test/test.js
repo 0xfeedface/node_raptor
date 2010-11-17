@@ -5,14 +5,14 @@ var util    = require('util'),
 
 var time;
 
-var parser = raptor.newParser('rdfxml', function (p) {
-    // start parsing when all other callbacks are in place
-    process.nextTick(function () {
-        if (process.argv.length > 2) {
-            time = Date.now();
-            p.parse(process.argv[2]);
-        }
-    });
+var parser = raptor.newParser('rdfxml');
+
+// start parsing when all other callbacks are in place
+process.nextTick(function () {
+    if (process.argv.length > 2) {
+        time = Date.now();
+        parser.parse(process.argv[2]);
+    }
 });
 
 var subjectsMap = {};
