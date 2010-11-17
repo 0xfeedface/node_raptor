@@ -9,13 +9,16 @@ Handle<Object> Statement::NewInstance() {
     HandleScope scope;
 
     if (template_.IsEmpty()) {
-        Handle<ObjectTemplate> t = ObjectTemplate::New();
+        Handle<FunctionTemplate> f = FunctionTemplate::New();
+        Handle<ObjectTemplate> proto = f->PrototypeTemplate();
+        proto->Set(tostring_symbol, FunctionTemplate::New(ToString));
+        
+        // Handle<ObjectTemplate> t = ObjectTemplate::New();
+        Handle<ObjectTemplate> t = f->InstanceTemplate();
         t->SetInternalFieldCount(1);
         t->SetAccessor(subject_symbol, SubjectAccessor);
         t->SetAccessor(pred_symbol, PredicateAccessor);
         t->SetAccessor(object_symbol, ObjectAccessor);
-        
-        NODE_SET_METHOD(t, "toString", ToString);
 
         template_ = Persistent<ObjectTemplate>::New(t);
     }

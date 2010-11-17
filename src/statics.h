@@ -10,6 +10,7 @@ using namespace v8;
 static Persistent<String> subject_symbol  = NODE_PSYMBOL("subject");
 static Persistent<String> pred_symbol     = NODE_PSYMBOL("predicate");
 static Persistent<String> object_symbol   = NODE_PSYMBOL("object");
+static Persistent<String> tostring_symbol = NODE_PSYMBOL("toString");
 static Persistent<String> type_symbol     = NODE_PSYMBOL("type");
 static Persistent<String> value_symbol    = NODE_PSYMBOL("value");
 static Persistent<String> uri_symbol      = NODE_PSYMBOL("uri");

@@ -1,4 +1,4 @@
-const MAX_STATEMENTS = 1000000;
+const MAX_STATEMENTS = Number.MAX_VALUE;
 
 var util    = require('util'), 
     raptor  = require('./../build/default/raptor');
