@@ -15,13 +15,20 @@ public:
     static Handle<Value> Initialize(const Arguments& args);
     static Handle<Value> New(const Arguments& args);
     static Handle<Value> Start(const Arguments& args);
+    static Handle<Value> End(const Arguments& args);
     
-    // static Handle<Value> SetNamespace(const Arguments& args);
+    static Handle<Value> SetNamespace(const Arguments& args);
     static Handle<Value> SerializeStatement(const Arguments& args);
     // static Handle<Value> SerializeDescription(const Arguments& args);
     Serializer(const char* syntax_name);
     ~Serializer();
 protected:
+    void Start(const char* filename);
+    void End();
+    void SetNamespace(const char* prefix, const char* nspace);
+    void SerializeStatement(const raptor_statement* statement);
+    static Handle<Value>* ExtractArguments(const Arguments& args, Handle<Value>* arguments);
+    
     raptor_serializer* serializer_;
     char* syntax_name_;
 };

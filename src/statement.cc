@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include <raptor.h>
 
 #include "statics.h"
@@ -183,4 +185,136 @@ Handle<Value> Statement::ObjectAccessor(Local<String> property, const AccessorIn
     result->Set(value_symbol, value);
     
     return scope.Close(result);
+}
+
+raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) {
+    HandleScope scope;
+    
+    Handle<Object> subject = obj->GetRealNamedProperty(subject_symbol)->ToObject();
+    Handle<String> subject_type = subject->GetRealNamedProperty(type_symbol)->ToString();
+    Handle<String> subject_value = subject->GetRealNamedProperty(value_symbol)->ToString();
+    String::Utf8Value subject_string(subject_value);
+    
+    raptor_term* subject_term;
+    if (subject_type->Equals(uri_symbol)) {
+        // have URI
+        raptor_uri* uri = raptor_new_uri_from_counted_string(world, 
+                                                             reinterpret_cast<unsigned char*>(*subject_string), 
+                                                             subject_value->Length());
+        if (uri) {
+            subject_term = raptor_new_term_from_uri(world, uri);
+            raptor_free_uri(uri);
+        }
+    } else if (subject_type->Equals(bnode_symbol)) {
+        // have bnode
+        subject_term = raptor_new_term_from_counted_blank(world, 
+                                                          reinterpret_cast<unsigned char*>(*subject_string), 
+                                                          subject_value->Length());
+    } else {
+        // error
+    }
+    if (subject_term) {
+        
+        raptor_free_term(subject_term);
+    }
+    
+    Handle<Object> predicate = obj->GetRealNamedProperty(pred_symbol)->ToObject();
+    Handle<String> predicate_type = predicate->GetRealNamedProperty(type_symbol)->ToString();
+    Handle<String> predicate_value = predicate->GetRealNamedProperty(value_symbol)->ToString();
+    String::Utf8Value predicate_string(predicate_value);
+    
+    raptor_term* predicate_term;
+    if (predicate_type->Equals(uri_symbol)) {
+        // have URI
+        raptor_uri* uri = raptor_new_uri_from_counted_string(world, 
+                                                             reinterpret_cast<unsigned char*>(*predicate_string), 
+                                                             predicate_value->Length());
+        if (uri) {
+            predicate_term = raptor_new_term_from_uri(world, uri);
+            raptor_free_uri(uri);
+        }
+    } else {
+        // error
+    }
+    
+    Handle<Object> object = obj->GetRealNamedProperty(object_symbol)->ToObject();
+    Handle<String> object_type = object->GetRealNamedProperty(type_symbol)->ToString();
+    Handle<String> object_value = object->GetRealNamedProperty(value_symbol)->ToString();
+    String::Utf8Value object_string(object_value);
+    
+    raptor_term* object_term;
+    if (object_type->Equals(uri_symbol)) {
+        // have URI
+        raptor_uri* uri = raptor_new_uri_from_counted_string(world, 
+                                                             reinterpret_cast<unsigned char*>(*object_string), 
+                                                             object_value->Length());
+        if (uri) {
+            object_term = raptor_new_term_from_uri(world, uri);
+            raptor_free_uri(uri);
+        }
+    } else if (object_type->Equals(bnode_symbol)) {
+        // have bnode
+        object_term = raptor_new_term_from_counted_blank(world, 
+                                                         reinterpret_cast<unsigned char*>(*object_string), 
+                                                         object_value->Length());
+    } else if (object_type->Equals(literal_symbol)) {
+        // literal
+        Handle<String> object_language;
+        if (obj->HasRealNamedProperty(lang_symbol)) {
+            object_language = obj->GetRealNamedProperty(lang_symbol)->ToString();
+            String::Utf8Value lang_string(object_language);
+            
+            // if (!object_language.IsEmpty()) {
+                object_term = raptor_new_term_from_counted_literal(world, 
+                                                                   reinterpret_cast<unsigned char*>(*object_string), 
+                                                                   object_value->Length(), 
+                                                                   NULL, 
+                                                                   reinterpret_cast<unsigned char*>(*lang_string), 
+                                                                   object_language->Length());
+            // }
+        } else {
+            object_term = raptor_new_term_from_counted_literal(world, 
+                                                               reinterpret_cast<unsigned char*>(*object_string), 
+                                                               object_value->Length(), 
+                                                               NULL, 
+                                                               NULL, 
+                                                               0);
+        }
+    } else if (object_type->Equals(tliteral_symbol)) {
+        // typed literal
+        Handle<String> object_datatype;
+        if (obj->HasRealNamedProperty(dtype_symbol)) {
+            object_datatype = obj->GetRealNamedProperty(dtype_symbol)->ToString();
+            String::Utf8Value dtype_string(object_datatype);
+            
+            raptor_uri* dtype_uri = raptor_new_uri_from_counted_string(world, 
+                                                                       reinterpret_cast<unsigned char*>(*dtype_string), 
+                                                                       object_datatype->Length());
+            
+           if (dtype_uri) {
+               object_term = raptor_new_term_from_counted_literal(world, 
+                                                                  reinterpret_cast<unsigned char*>(*object_string), 
+                                                                  object_value->Length(), 
+                                                                  dtype_uri, 
+                                                                  NULL, 
+                                                                  NULL);
+               raptor_free_uri(dtype_uri);
+           } else {
+               // error
+           }
+        }
+    } else {
+        // error
+    }
+    
+    raptor_statement* statement;
+    if (subject_term && predicate_term && object_term) {
+        return raptor_new_statement_from_nodes(world, 
+                                               subject_term, 
+                                               predicate_term, 
+                                               object_term, 
+                                               NULL);
+    }
+    
+    return NULL;
 }

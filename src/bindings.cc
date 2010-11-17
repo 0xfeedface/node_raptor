@@ -9,5 +9,5 @@ using namespace node;
 /* extern "C" to prevent name mangling */
 extern "C" void init(Handle<Object> target) {
     NODE_SET_METHOD(target, "newParser", Parser::Initialize);
-    // NODE_SET_METHOD(target, "newSerializer", Serializer::Initialize);
+    NODE_SET_METHOD(target, "newSerializer", Serializer::Initialize);
 }

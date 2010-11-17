@@ -1,6 +1,9 @@
-#include "serializer.h"
+#include <cstring>  /* strlen, strcpy */
 
-static Handle<Value> Serializer::Initialize(const Arguments& args) {
+#include "serializer.h"
+#include "statement.h"
+
+Handle<Value> Serializer::Initialize(const Arguments& args) {
     HandleScope scope;
 
     Handle<FunctionTemplate> t = FunctionTemplate::New(New);
@@ -10,9 +13,11 @@ static Handle<Value> Serializer::Initialize(const Arguments& args) {
 
     NODE_SET_PROTOTYPE_METHOD(t, "start", Start);
     NODE_SET_PROTOTYPE_METHOD(t, "end", End);
+    NODE_SET_PROTOTYPE_METHOD(t, "setNamespace", SetNamespace);
+    NODE_SET_PROTOTYPE_METHOD(t, "serializeStatement", SerializeStatement);
     // NODE_SET_PROTOTYPE_METHOD(t, "setOption", SetOption);
     
-    t->InstanceTemplate()->SetAccessor(String::NewSymbol("name"), GetName);
+    // t->InstanceTemplate()->SetAccessor(String::NewSymbol("name"), GetName);
 
     Handle<Function> function = t->GetFunction();
     Handle<Value> arguments[args.Length()];
@@ -29,7 +34,7 @@ static Handle<Value> Serializer::Initialize(const Arguments& args) {
     return scope.Close(serializer);
 }
 
-static Handle<Value> Serializer::New(const Arguments& args) {
+Handle<Value> Serializer::New(const Arguments& args) {
     HandleScope scope;
     
     Handle<String> syntax_name;
@@ -46,7 +51,7 @@ static Handle<Value> Serializer::New(const Arguments& args) {
     return scope.Close(args.This());
 }
 
-static Handle<Value> Serializer::Start(const Arguments& args) {
+Handle<Value> Serializer::Start(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
     HandleScope scope;
     
@@ -62,7 +67,33 @@ static Handle<Value> Serializer::Start(const Arguments& args) {
     return Undefined();
 }
 
-static Handle<Value> SerializeStatement(const Arguments& args) {
+Handle<Value> Serializer::End(const Arguments& args) {
+    Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
+    serializer->End();
+    
+    return Undefined();
+}
+
+Handle<Value> Serializer::SetNamespace(const Arguments& args) {
+    Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
+    HandleScope scope;
+    
+    if (!args.Length() == 2 || !args[0]->IsString() || !args[1]->IsString()) {
+        return Undefined();
+    }
+    
+    Handle<String> prefix = args[0]->ToString();
+    Handle<String> nspace = args[1]->ToString();
+    
+    String::Utf8Value prefix_s(prefix);
+    String::Utf8Value nspace_s(nspace);
+    
+    serializer->SetNamespace(*prefix_s, *nspace_s);
+    
+    return Undefined();
+}
+
+Handle<Value> Serializer::SerializeStatement(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
     HandleScope scope;
     
@@ -70,9 +101,12 @@ static Handle<Value> SerializeStatement(const Arguments& args) {
         return Undefined();
     }
     
-    Handle<Object> statement = args[0]->ToObject();
+    raptor_statement* statement = Statement::ConvertObjectToRaptorStatement(args[0]->ToObject());
+    if (statement) {
+        serializer->SerializeStatement(statement);
+    }
     
-    Handle<Object> subject = statement->GetNamedProperty()
+    return Undefined();
 }
 
 Serializer::Serializer(const char* syntax_name) {
@@ -92,6 +126,25 @@ void Serializer::Start(const char* filename) {
     raptor_serializer_start_to_filename(serializer_, filename);
 }
 
+void Serializer::End() {
+    raptor_serializer_serialize_end(serializer_);
+}
+
+void Serializer::SetNamespace(const char* prefix, const char* nspace) {
+    raptor_uri* nspace_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(nspace));
+    raptor_serializer_set_namespace(serializer_, 
+                                    nspace_uri, 
+                                    reinterpret_cast<const unsigned char*>(prefix));
+}
+
 void Serializer::SerializeStatement(const raptor_statement* statement) {
+    raptor_serializer_serialize_statement(serializer_, const_cast<raptor_statement*>(statement));
+}
+
+Handle<Value>* Serializer::ExtractArguments(const Arguments& args, Handle<Value>* arguments) {
+    for (int i = 0; i < args.Length(); ++i) {
+        arguments[i] = args[i];
+    }
     
+    return arguments;
 }

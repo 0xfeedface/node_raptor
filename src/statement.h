@@ -10,6 +10,7 @@ public:
     static v8::Handle<v8::Value> SubjectAccessor(v8::Local<v8::String> property, const v8::AccessorInfo& info);
     static v8::Handle<v8::Value> PredicateAccessor(v8::Local<v8::String> property, const v8::AccessorInfo& info);
     static v8::Handle<v8::Value> ObjectAccessor(v8::Local<v8::String> property, const v8::AccessorInfo& info);
+    static raptor_statement* ConvertObjectToRaptorStatement(Handle<Object> obj);
 private:
     static v8::Handle<v8::ObjectTemplate> template_;
 };
