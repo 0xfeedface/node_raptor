@@ -21,7 +21,7 @@
 
 <!-- Ontology Information -->
   <owl:Ontology rdf:about="&phil;" rdfs:label="Philosopher's Ontology">
-    <rdfs:comment>AKSW demo knowledge base about philosophers. It demonstrates various OntoWiki features such as arbitrary object hierarchies, geoinformation reasoning, semantic plug-ins and blank node usage.</rdfs:comment>
+    <rdfs:comment>AKSW demo knowledge base about philosophers. It demonstrates various OntoWiki features such as arbitrary object hierarchies, geoinformation reasoning, semantic plug-ins adn blank node usage.</rdfs:comment>
     <owl:versionInfo>$Id$</owl:versionInfo>
   </owl:Ontology>
 
@@ -170,7 +170,7 @@
     <rdfs:label xml:lang="en">Socrates</rdfs:label>
     <dc:title xml:lang="de">Sokrates</dc:title>
     
-    <phil:yearOfBirth datatype="&xsd;integer">-470</phil:yearOfBirth>
+    <phil:yearOfBirth>-470</phil:yearOfBirth>
     <phil:yearOfDeath>-399</phil:yearOfDeath>
     <foaf:depiction rdf:resource="http://upload.wikimedia.org/wikipedia/commons/a/a4/Socrates_Louvre.jpg"/>
   </phil:ClassicalGreekPhilosopher>

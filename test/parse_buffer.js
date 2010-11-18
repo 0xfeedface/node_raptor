@@ -1,18 +1,21 @@
 const MAX_STATEMENTS = Number.MAX_VALUE;
 
 var util    = require('util'), 
+    fs      = require('fs'), 
     raptor  = require('./../build/default/raptor');
 
 var time;
+var filename = process.argv[2];
 
-var parser = raptor.newParser('rdfxml');
+var fileStream = fs.createReadStream(filename);
+var parser = raptor.newParser('turtle');
 
-// start parsing when all other callbacks are in place
+var time = Date.now();
+
 process.nextTick(function () {
-    if (process.argv.length > 2) {
-        time = Date.now();
-        parser.parse(process.argv[2]);
-    }
+    parser.parseStart('http://example.com/');
+    parser.parseBuffer(new Buffer('<http://example.com/me> a <http://example.com/Person> ,<http://example.com/PhDStudent> .'));
+    parser.parseBuffer();
 });
 
 var subjectsMap = {};
@@ -20,7 +23,7 @@ var subjectCount = 0;
 var tripleCount = 0;
 parser.on('statement', function (statement) {
     // if (statement.subject.type == 'bnode') {
-    //     util.puts(statement);
+        util.puts(statement);
     // }
     
     if (++tripleCount >= MAX_STATEMENTS) {
@@ -28,18 +31,18 @@ parser.on('statement', function (statement) {
     }
 });
 
-// parser.on('message', function (type, message, code) {
-//     if (type == 'error' || type == 'warning') {
-//         util.log(type.toUpperCase() + ': ' + message + ' (' + code + ')');
-//     }
-// });
+parser.on('message', function (type, message, code) {
+    if (type == 'error' || type == 'warning') {
+        util.log(type.toUpperCase() + ': ' + message + ' (' + code + ')');
+    }
+});
 
 var namespaces = {};
-// parser.on('namespace', function (prefix, uri) {
-//     if (!(prefix in namespaces)) {
-//         namespaces[prefix] = uri;
-//     }
-// });
+parser.on('namespace', function (prefix, uri) {
+    if (!(prefix in namespaces)) {
+        namespaces[prefix] = uri;
+    }
+});
 
 parser.on('end', function () {
     util.puts(tripleCount + ' statements parsed.');

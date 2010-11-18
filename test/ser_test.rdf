@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xml:base="file:///Users/norman/Projects/Git/node_raptor/test/ser_test.rdf">
+  <rdf:Description rdf:about="http://xmlns.com/foaf/0.1/name">
+    <foaf:name>Resource One</foaf:name>
+  </rdf:Description>
+</rdf:RDF>

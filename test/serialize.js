@@ -22,3 +22,34 @@ serializer.serializeStatement(s);
 
 // close serializer
 serializer.end();
+
+var s = fs.createReadStream(__dirname + '/ser_test.rdf');
+s.on('data', function (d) {
+    util.print(d);
+})
+
+// ----------------------------------------------------------------------------
+
+// the file we will be writing to
+var file = fs.createWriteStream('./ser2_test.ttl');
+var serializer = raptor.newSerializer('turtle');
+
+serializer.start('http://example.com/graph/');
+var numStmt = 1000;
+while (numStmt--) {
+    serializer.serializeStatement(s);
+}
+serializer.end();
+
+serializer.on('data', function (data) {
+    file.write(data);
+});
+
+serializer.on('end', function () {
+    file.end();
+});
+
+serializer.on('error', function (type, message, code) {
+    util.puts(message);
+});
+

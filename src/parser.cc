@@ -1,4 +1,7 @@
 #include <cstring>  /* strlen, strcpy */
+#include <cstdio>
+
+#include <node_buffer.h>
 
 #include "statics.h"
 #include "statement.h"
@@ -12,7 +15,12 @@ Handle<Value> Parser::Initialize(const Arguments& args) {
     t->Inherit(EventEmitter::constructor_template);
     t->InstanceTemplate()->SetInternalFieldCount(1);
 
-    NODE_SET_PROTOTYPE_METHOD(t, "parse", Parse);
+    NODE_SET_PROTOTYPE_METHOD(t, "parseFile", ParseFile);
+    NODE_SET_PROTOTYPE_METHOD(t, "parseURI", ParseURI);
+    
+    NODE_SET_PROTOTYPE_METHOD(t, "parseStart", ParseStart);
+    NODE_SET_PROTOTYPE_METHOD(t, "parseBuffer", ParseBuffer);
+    
     NODE_SET_PROTOTYPE_METHOD(t, "abort", Abort);
     NODE_SET_PROTOTYPE_METHOD(t, "setOption", SetOption);
     
@@ -50,18 +58,104 @@ Handle<Value> Parser::New(const Arguments& args) {
     return scope.Close(args.This());
 }
 
-Handle<Value> Parser::Parse(const Arguments& args) {
+Handle<Value> Parser::ParseFile(const Arguments& args) {
     Parser* parser = ObjectWrap::Unwrap<Parser>(args.This());
-    HandleScope scope;
     
-    if (!args.Length() == 1 || !args[0]->IsString()) {
-        return Undefined();
+    if (!args.Length() >= 1 || !args[0]->IsString()) {
+        return ThrowException(Exception::Error(
+            String::New("First parameter should be filename.")));
     }
     
-    Handle<String> file = args[0]->ToString();
+    HandleScope scope;
     
-    String::Utf8Value filename(file);
-    parser->Parse(*filename);
+    String::Utf8Value filename(args[0]->ToString());
+    
+    if (args.Length() >= 2 && args[1]->IsString()) {
+        String::Utf8Value base(args[1]->ToString());
+        parser->ParseFile(*filename, *base);
+    } else {
+        parser->ParseFile(*filename, NULL);
+    }
+    
+    return Undefined();
+}
+
+Handle<Value> Parser::ParseURI(const Arguments& args) {
+    Parser* parser = ObjectWrap::Unwrap<Parser>(args.This());
+    
+    if (args.Length() == 0 || !args[0]->IsString()) {
+        return ThrowException(Exception::Error(
+            String::New("First parameter should be URI.")));
+    }
+    
+    HandleScope scope;
+    
+    String::Utf8Value uri_string(args[0]->ToString());
+    
+    if (args.Length() >= 2 && args[1]->IsString()) {
+        String::Utf8Value base(args[1]->ToString());
+        parser->ParseURI(*uri_string, *base);
+    } else {
+        parser->ParseURI(*uri_string, NULL);
+    }
+    
+    return Undefined();
+}
+
+Handle<Value> Parser::ParseStart(const Arguments& args) {
+    Parser* parser = ObjectWrap::Unwrap<Parser>(args.This());
+    
+    HandleScope scope;
+    
+    if (!parser->state_ == PARSER_STATE_INIT) {
+        return ThrowException(Exception::Error(
+            String::New("Parsing already started.")));
+    }
+    
+    if (args.Length() >= 1 && args[0]->IsString()) {
+        String::Utf8Value base(args[0]->ToString());
+        parser->ParseStart(*base);
+    } else {
+        parser->ParseStart(NULL);
+    }
+    
+    parser->state_ = PARSER_STATE_STARTED;
+    
+    return Undefined();
+}
+
+Handle<Value> Parser::ParseBuffer(const Arguments& args) {
+    Parser* parser = ObjectWrap::Unwrap<Parser>(args.This());
+    
+    HandleScope scope;
+    
+    if (args.Length() >= 1) {
+        if (!parser->state_ == PARSER_STATE_STARTED) {
+            return ThrowException(Exception::Error(
+                String::New("Parsing a buffer, parseStart needs to be called first.")));
+        }
+        
+        // chunk
+        Handle<Value> buffer_h = args[0];
+        if (!Buffer::HasInstance(buffer_h)) {
+            return ThrowException(Exception::TypeError(
+                String::New("Argument should be a buffer")));
+        }
+        
+        Handle<Object> buffer_obj = buffer_h->ToObject();
+        char *buffer_data = Buffer::Data(buffer_obj);
+        size_t buffer_length = Buffer::Length(buffer_obj);
+        
+        parser->ParseBuffer(buffer_data, buffer_length, false);
+        parser->state_ = PARSER_STATE_PARSING;
+    } else {
+        // end
+        if (parser->state_ == PARSER_STATE_PARSING) {
+            parser->ParseBuffer(NULL, 0, true);
+        }
+        
+        parser->state_ = PARSER_STATE_INIT;
+    }
     
     return Undefined();
 }
@@ -116,13 +210,24 @@ void Parser::CallbackWrapper(void *user_data, raptor_log_message* message) {
 
 Parser::Parser(const char* name) {
     // keep parser name; actual parser created lazily
-    parser_name_ = new char[strlen(name)];
-    strcpy(parser_name_, const_cast<char*>(name));
+    syntax_name_ = new char[strlen(name)];
+    strcpy(syntax_name_, const_cast<char*>(name));
+    
+    raptor_parser* parser = raptor_new_parser(world, syntax_name_);
+    parser_ = parser;
+    
+    raptor_parser_set_statement_handler(parser, this, Parser::CallbackWrapper);
+    raptor_parser_set_namespace_handler(parser, this, Parser::CallbackWrapper);
+    
+    // log handling per world
+    raptor_world_set_log_handler(world, this, Parser::CallbackWrapper);
+    
+    state_ = PARSER_STATE_INIT;
 }
 
 Parser::~Parser() {
     raptor_free_parser(parser_);
-    delete parser_name_;
+    delete syntax_name_;
     raptor_world_set_log_handler(world, NULL, NULL);
 }
 
@@ -132,34 +237,74 @@ void Parser::Abort() {
     }
 }
 
-void Parser::Parse(const char* filename) {
-    /* TODO: parse asynchonously */
-    raptor_parser* parser = raptor_new_parser(world, parser_name_);
-    parser_ = parser;
-    raptor_parser_set_statement_handler(parser, this, Parser::CallbackWrapper);
-    raptor_parser_set_namespace_handler(parser, this, Parser::CallbackWrapper);
+void Parser::ParseFile(const char* filename, const char* base) {
+    unsigned char* file_uri_string = NULL;
+    file_uri_string = raptor_uri_filename_to_uri_string(filename);
     
-    raptor_world_set_log_handler(world, this, Parser::CallbackWrapper);
-    
-    uint8_t* file_uri_string = raptor_uri_filename_to_uri_string(filename);
-    raptor_uri* file_uri = raptor_new_uri(world, file_uri_string);
-    
-    if (file_uri) {
-        raptor_parser_parse_file(parser, file_uri, NULL);
-        raptor_free_uri(file_uri);
-        file_uri = NULL;
-    }
+    raptor_uri* file_uri = NULL;
+    file_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(file_uri_string));
     
     if (file_uri_string) {
         raptor_free_memory(file_uri_string);
     }
-
+    
+    raptor_uri* base_uri = NULL;
+    if (base) {
+        base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
+    }
+    
+    raptor_parser_parse_file(parser_, file_uri, base_uri);
     
     Emit(end_symbol, 0, NULL);
+    
+    if (base_uri) {
+        raptor_free_uri(base_uri);
+    }
+    
+    if (file_uri) {
+        raptor_free_uri(file_uri);
+    }
 }
 
-void Parser::DoParse(eio_req* request) {
+void Parser::ParseURI(const char* uri_string, const char* base) {
+    raptor_uri* uri = NULL;
+    uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(uri_string));
     
+    raptor_uri* base_uri = NULL;
+    if (base) {
+        base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
+    }
+    
+    raptor_parser_parse_uri(parser_, uri, base_uri);
+    
+    Emit(end_symbol, 0, NULL);
+    
+    if (uri) {
+        raptor_free_uri(uri);
+    }
+    
+    if (base_uri) {
+        raptor_free_uri(base_uri);
+    }
+}
+
+void Parser::ParseStart(const char* base) {
+    raptor_uri* base_uri = NULL;
+    base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
+    
+    raptor_parser_parse_start(parser_, base_uri);
+    
+    if (base_uri) {
+        raptor_free_uri(base_uri);
+    }
+}
+
+void Parser::ParseBuffer(const char* buffer, size_t buffer_length, bool end) {
+    raptor_parser_parse_chunk(parser_, reinterpret_cast<const unsigned char*>(buffer), buffer_length, end);
+    
+    if (end) {
+        Emit(end_symbol, 0, NULL);
+    }
 }
 
 Handle<Value>* Parser::ExtractArguments(const Arguments& args, Handle<Value>* arguments) {
@@ -171,7 +316,7 @@ Handle<Value>* Parser::ExtractArguments(const Arguments& args, Handle<Value>* ar
 }
 
 const char* Parser::GetName() {
-    return parser_name_;
+    return syntax_name_;
 }
 
 void Parser::SetOption(const char* option_name, const char* string_option_value) {

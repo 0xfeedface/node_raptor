@@ -97,14 +97,38 @@ Handle<Value> Serializer::SerializeStatement(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
     HandleScope scope;
     
+    Handle<Value> exception;
+    
     if (!args.Length() == 1 || !args[0]->IsObject()) {
+        ThrowException(Exception::Error(String::New("First should be a JSON triples structure.")));
         return Undefined();
     }
     
-    raptor_statement* statement = Statement::ConvertObjectToRaptorStatement(args[0]->ToObject());
-    if (statement) {
-        serializer->SerializeStatement(statement);
+    Handle<Object> statement_object = args[0]->ToObject();
+    
+    if (!statement_object->HasRealNamedProperty(subject_symbol)) {
+        ThrowException(Exception::Error(String::New("Statement is missing 'subject' key.")));
+        return Undefined();
     }
+    
+    if (!statement_object->HasRealNamedProperty(pred_symbol)) {
+        ThrowException(Exception::Error(String::New("Statement is missing 'predicate' key.")));
+        return Undefined();
+    }
+    
+    if (!statement_object->HasRealNamedProperty(object_symbol)) {
+        ThrowException(Exception::Error(String::New("Statement is missing 'object' key.")));
+        return Undefined();
+    }
+    
+    raptor_statement* statement = Statement::ConvertObjectToRaptorStatement(statement_object);
+    
+    if (!statement) {
+        ThrowException(Exception::Error(String::New("Unable to create statement.")));
+        return Undefined();
+    }
+    
+    serializer->SerializeStatement(statement);
     
     return Undefined();
 }

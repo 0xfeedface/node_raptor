@@ -7,6 +7,12 @@
 
 #include "statics.h"
 
+enum parser_state {
+    PARSER_STATE_INIT = 0, 
+    PARSER_STATE_STARTED, 
+    PARSER_STATE_PARSING, 
+};
+
 using namespace v8;
 using namespace node;
 
@@ -14,7 +20,12 @@ class Parser : public EventEmitter {
 public:
     static Handle<Value> Initialize(const Arguments& args);
     static Handle<Value> New(const Arguments& args);
-    static Handle<Value> Parse(const Arguments& args);
+    
+    static Handle<Value> ParseFile(const Arguments& args);
+    static Handle<Value> ParseURI(const Arguments& args);
+    static Handle<Value> ParseStart(const Arguments& args);
+    static Handle<Value> ParseBuffer(const Arguments& args);
+    
     static Handle<Value> Abort(const Arguments& args);
     static Handle<Value> SetOption(const Arguments& args);
     static Handle<Value> GetName (Local<String> property, const AccessorInfo& info);
@@ -25,8 +36,13 @@ public:
     ~Parser();
 protected:
     void Abort();
-    void Parse(const char* filename);
-    void DoParse(eio_req* request);
+    
+    void ParseFile(const char* filename, const char* base);
+    void ParseURI(const char* uri, const char* base);
+    
+    void ParseStart(const char* base);
+    void ParseBuffer(const char* buffer, size_t buffer_length, bool end);
+    
     static Handle<Value>* ExtractArguments(const Arguments& args, Handle<Value>* arguments);
     const char* GetName();
     void SetOption(const char* option_name, const char* string_option_value);
@@ -36,7 +52,8 @@ protected:
     void LogMessageHandler(raptor_log_message* message);
     
     raptor_parser* parser_;
-    char* parser_name_;
+    char* syntax_name_;
+    parser_state state_;
 };
 
 #endif
