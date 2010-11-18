@@ -33,7 +33,7 @@ You can create parsers or serializers for certain syntax types like so:
 
     Starts parsing in buffer mode using optional base URI `base`.
     Buffers can be sent to the parser via `parser.parseBuffer(buffer)`.
-    Calling `parseBuffer(buffer)` with no parameter ends buffer parsing mode.
+    Calling `parseBuffer()` with no parameter ends buffer parsing mode.
 
 * `parser.setOption(optionName, optionValue);`
 
@@ -43,7 +43,7 @@ You can create parsers or serializers for certain syntax types like so:
 
     Aborts the parsing process; 'end' will be emitted.
 
-* `parser.name` holds the format name that was used with `raptor.newParser` (e.&thinsp;g. 'rdfxml').
+* `parser.name` holds the syntax name that was used with `raptor.newParser` (e.&thinsp;g. 'rdfxml').
 
 ### Serializer
 
