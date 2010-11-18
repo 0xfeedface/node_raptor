@@ -12,26 +12,28 @@ Include raptor bindings with
 
     var raptor = require('raptor');
 
-You can create parsers for certain syntax types like so:
+You can create parsers or serializers for certain syntax types like so:
 
     var parser = raptor.newParser('rdfxml');
-
-`newParser` accepts a callback as second parameter where parsing options can be set.
-
-    raptor.newParser('rdfxml', function (parser) {
-        parser.setOption('foo', 'bar');
-        process.nextTick(function () {
-            parser.parse('/Users/norman/rdf/foaf.rdf');
-        });
-    });
+    var serializer = raptor.newSerializer('turtle');
 
 ## API
 
-### Methods
+### Parser
 
-* `parser.parse(pathName);`
+* `parser.parseFile(pathName [, base]);`
 
-    Parses file at path `pathName`.
+    Parses file at path `pathName` using optional base URI `base`.
+
+* `parser.parseURI(uri [, base]);`
+
+    Parses RDF date retrieved from `uri` using optional base URI `base`.
+
+* `parser.parseStart([base]);`
+
+    Starts parsing in buffer mode using optional base URI `base`.
+    Buffers can be sent to the parser via `parser.parseBuffer(buffer)`.
+    Calling `parseBuffer(buffer)` with no parameter ends buffer parsing mode.
 
 * `parser.setOption(optionName, optionValue);`
 
@@ -41,9 +43,10 @@ You can create parsers for certain syntax types like so:
 
     Aborts the parsing process; 'end' will be emitted.
 
-### Properties
-
 * `parser.name` holds the format name that was used with `raptor.newParser` (e.&thinsp;g. 'rdfxml').
+
+### Serializer
+
 
 ## Emitted Events
 
