@@ -45,8 +45,8 @@ Handle<Value> Statement::ToString(const Arguments& args) {
                                              &statement_string_len, 
                                              malloc);
     if (!iostream) {
-        ThrowException(String::New("Error serializing statement."));
-        return Undefined();
+        return ThrowException(Exception::Error(
+            String::New("Error serializing statement.")));
     }
     
     int ret_val;
@@ -58,6 +58,8 @@ Handle<Value> Statement::ToString(const Arguments& args) {
             free(statement_string);
             statement_string = NULL;
         }
+        // error
+        return Undefined();
     }
     
     Handle<String> result;
@@ -213,10 +215,6 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
     } else {
         // error
     }
-    if (subject_term) {
-        
-        raptor_free_term(subject_term);
-    }
     
     Handle<Object> predicate = obj->GetRealNamedProperty(pred_symbol)->ToObject();
     Handle<String> predicate_type = predicate->GetRealNamedProperty(type_symbol)->ToString();
@@ -309,11 +307,17 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
     
     raptor_statement* statement;
     if (subject_term && predicate_term && object_term) {
-        return raptor_new_statement_from_nodes(world, 
+        raptor_statement* result = raptor_new_statement_from_nodes(world, 
                                                subject_term, 
                                                predicate_term, 
                                                object_term, 
                                                NULL);
+        
+        // raptor_free_term(subject_term);
+        // raptor_free_term(predicate_term);
+        // raptor_free_term(object_term);
+        
+        return result;
     }
     
     return NULL;

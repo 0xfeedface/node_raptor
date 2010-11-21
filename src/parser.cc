@@ -24,7 +24,12 @@ Handle<Value> Parser::Initialize(const Arguments& args) {
     NODE_SET_PROTOTYPE_METHOD(t, "abort", Abort);
     NODE_SET_PROTOTYPE_METHOD(t, "setOption", SetOption);
     
-    t->InstanceTemplate()->SetAccessor(String::NewSymbol("name"), GetName);
+    t->InstanceTemplate()->SetAccessor(String::NewSymbol("name"), 
+                                       GetName, 
+                                       NULL, 
+                                       Handle<Value>(), 
+                                       DEFAULT, 
+                                       ReadOnly);
 
     Handle<Function> function = t->GetFunction();
     Handle<Value> arguments[args.Length()];

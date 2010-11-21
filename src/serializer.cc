@@ -2,6 +2,7 @@
 
 #include "serializer.h"
 #include "statement.h"
+#include "statics.h"
 
 Handle<Value> Serializer::Initialize(const Arguments& args) {
     HandleScope scope;
@@ -11,13 +12,19 @@ Handle<Value> Serializer::Initialize(const Arguments& args) {
     t->Inherit(EventEmitter::constructor_template);
     t->InstanceTemplate()->SetInternalFieldCount(1);
 
-    NODE_SET_PROTOTYPE_METHOD(t, "start", Start);
-    NODE_SET_PROTOTYPE_METHOD(t, "end", End);
+    NODE_SET_PROTOTYPE_METHOD(t, "serializeToFile", SerializeToFile);
+    NODE_SET_PROTOTYPE_METHOD(t, "serializeStart", SerializeStart);
+    NODE_SET_PROTOTYPE_METHOD(t, "serializeEnd", SerializeEnd);
     NODE_SET_PROTOTYPE_METHOD(t, "setNamespace", SetNamespace);
     NODE_SET_PROTOTYPE_METHOD(t, "serializeStatement", SerializeStatement);
     // NODE_SET_PROTOTYPE_METHOD(t, "setOption", SetOption);
     
-    // t->InstanceTemplate()->SetAccessor(String::NewSymbol("name"), GetName);
+    t->InstanceTemplate()->SetAccessor(String::NewSymbol("name"), 
+                                       GetName, 
+                                       NULL, 
+                                       Handle<Value>(), 
+                                       DEFAULT, 
+                                       ReadOnly);
 
     Handle<Function> function = t->GetFunction();
     Handle<Value> arguments[args.Length()];
@@ -51,25 +58,58 @@ Handle<Value> Serializer::New(const Arguments& args) {
     return scope.Close(args.This());
 }
 
-Handle<Value> Serializer::Start(const Arguments& args) {
+Handle<Value> Serializer::SerializeToFile(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
     HandleScope scope;
     
-    if (!args.Length() == 1 || !args[0]->IsString()) {
-        return Undefined();
+    if (serializer->state_ != SERIALIZER_STATE_INIT) {
+        return ThrowException(Exception::Error(
+            String::New("Previous serialization needs to be finished first.")));
     }
     
-    Handle<String> file = args[0]->ToString();
+    if (!args.Length() >= 1 || !args[0]->IsString()) {
+        return ThrowException(Exception::Error(
+            String::New("First parameter should be filename.")));
+    }
     
-    String::Utf8Value filename(file);
-    serializer->Start(*filename);
+    String::Utf8Value filename(args[0]->ToString());
+    
+    serializer->SerializeToFile(*filename);
+    
+    serializer->state_ = SERIALIZER_STATE_SERIALIZING;
     
     return Undefined();
 }
 
-Handle<Value> Serializer::End(const Arguments& args) {
+Handle<Value> Serializer::SerializeStart(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
-    serializer->End();
+    HandleScope scope;
+    
+    if (serializer->state_ != SERIALIZER_STATE_INIT) {
+        return ThrowException(Exception::Error(
+            String::New("Previous serialization needs to be finished first.")));
+    }
+    
+    if (!args.Length() == 1 || !args[0]->IsString()) {
+        // return ThrowException(Exception::Error(
+        //     String::New("First parameter should be base URI.")));
+        serializer->SerializeStart(NULL);
+    } else {
+        Handle<String> base_h = args[0]->ToString();
+        String::Utf8Value base(base_h);
+        serializer->SerializeStart(*base);
+    }
+    
+    serializer->state_ = SERIALIZER_STATE_SERIALIZING;
+    
+    return Undefined();
+}
+
+Handle<Value> Serializer::SerializeEnd(const Arguments& args) {
+    Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
+    serializer->SerializeEnd();
+    
+    serializer->state_ = SERIALIZER_STATE_INIT;
     
     return Undefined();
 }
@@ -130,12 +170,24 @@ Handle<Value> Serializer::SerializeStatement(const Arguments& args) {
     
     serializer->SerializeStatement(statement);
     
+    raptor_free_statement(statement);
+    
     return Undefined();
+}
+
+Handle<Value> Serializer::GetName(Local<String> property, const AccessorInfo& info) {
+    Serializer* serializer = ObjectWrap::Unwrap<Serializer>(info.This());
+    HandleScope scope;
+    
+    Handle<String> name = String::New(serializer->GetName());
+    
+    return scope.Close(name);
 }
 
 Serializer::Serializer(const char* syntax_name) {
     // keep syntax name; actual serializer is created lazily
     syntax_name_ = new char[strlen(syntax_name)];
+    state_ = SERIALIZER_STATE_INIT;
     strcpy(syntax_name_, const_cast<char*>(syntax_name));
 }
 
@@ -145,13 +197,61 @@ Serializer::~Serializer() {
     raptor_world_set_log_handler(world, NULL, NULL);
 }
 
-void Serializer::Start(const char* filename) {
+void Serializer::SerializeToFile(const char* filename) {
     serializer_ = raptor_new_serializer(world, syntax_name_);
     raptor_serializer_start_to_filename(serializer_, filename);
 }
 
-void Serializer::End() {
+void Serializer::SerializeStart(const char* base) {
+    serializer_ = raptor_new_serializer(world, syntax_name_);
+    
+    raptor_iostream* iostream = NULL;
+    iostream = raptor_new_iostream_to_string(world, 
+                                             reinterpret_cast<void**>(&statement_string_), 
+                                             &statement_string_length_, 
+                                             malloc);
+    if (!iostream) {
+        return;/* ThrowException(Exception::Error(
+            String::New("Error creating serialization stream."))); */
+    }
+    
+    raptor_uri* base_uri = NULL;
+    if (base) {
+        base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
+    }
+    
+    raptor_serializer_start_to_iostream(serializer_, base_uri, iostream);
+    
+    if (base_uri) {
+        raptor_free_uri(base_uri);
+    }
+    
+    statement_stream_ = iostream;
+}
+
+void Serializer::SerializeEnd() {
     raptor_serializer_serialize_end(serializer_);
+    if (statement_stream_) {
+        raptor_free_iostream(statement_stream_);
+    }
+    
+    HandleScope scope;
+    
+    // TODO: make external?
+    Handle<String> data;
+    if (statement_string_) {
+        data = String::New(reinterpret_cast<char*>(statement_string_), 
+                           statement_string_length_);
+        free(statement_string_);
+        statement_string_ = NULL;
+    }
+    
+    Handle<Value> args[1];
+    args[0] = data;
+    
+    // TODO: serialize in chunks w/ raptor_new_iostream_from_handler?
+    Emit(data_symbol, 1, args);
+    Emit(end_symbol, 0, NULL);
 }
 
 void Serializer::SetNamespace(const char* prefix, const char* nspace) {
@@ -171,4 +271,8 @@ Handle<Value>* Serializer::ExtractArguments(const Arguments& args, Handle<Value>
     }
     
     return arguments;
+}
+
+const char* Serializer::GetName() {
+    return syntax_name_;
 }

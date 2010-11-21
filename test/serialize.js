@@ -8,6 +8,7 @@ var s = {
     object:     {value: 'Resource One', type: 'literal'}
 }
 
+/*
 var serializer = raptor.newSerializer('rdfxml');
 
 // set syntax options
@@ -26,27 +27,28 @@ serializer.end();
 var s = fs.createReadStream(__dirname + '/ser_test.rdf');
 s.on('data', function (d) {
     util.print(d);
-})
+});
+*/
 
 // ----------------------------------------------------------------------------
 
 // the file we will be writing to
-var file = fs.createWriteStream('./ser2_test.ttl');
 var serializer = raptor.newSerializer('turtle');
 
-serializer.start('http://example.com/graph/');
-var numStmt = 1000;
-while (numStmt--) {
-    serializer.serializeStatement(s);
-}
-serializer.end();
 
+process.nextTick(function () {
+    serializer.serializeStart();
+    serializer.serializeStatement(s);
+    serializer.serializeEnd();
+});
+
+var triples = '';
 serializer.on('data', function (data) {
-    file.write(data);
+    triples += data;
 });
 
 serializer.on('end', function () {
-    file.end();
+    util.puts(triples);
 });
 
 serializer.on('error', function (type, message, code) {

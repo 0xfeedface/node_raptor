@@ -21,6 +21,7 @@ static Persistent<String> dtype_symbol    = NODE_PSYMBOL("datatype");
 static Persistent<String> lang_symbol     = NODE_PSYMBOL("lang");
 static Persistent<String> stmt_symbol     = NODE_PSYMBOL("statement");
 static Persistent<String> nmspc_symbol    = NODE_PSYMBOL("namespace");
+static Persistent<String> data_symbol     = NODE_PSYMBOL("data");
 static Persistent<String> message_symbol  = NODE_PSYMBOL("message");
 static Persistent<String> end_symbol      = NODE_PSYMBOL("end");
 static Persistent<String> debug_symbol    = NODE_PSYMBOL("debug");
