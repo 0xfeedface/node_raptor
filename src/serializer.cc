@@ -1,4 +1,5 @@
 #include <cstring>  /* strlen, strcpy */
+#include <cstdlib>
 
 #include "serializer.h"
 #include "statement.h"
