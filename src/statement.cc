@@ -193,9 +193,9 @@ Handle<Value> Statement::ObjectAccessor(Local<String> property, const AccessorIn
 raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) {
     HandleScope scope;
     
-    Handle<Object> subject = obj->GetRealNamedProperty(subject_symbol)->ToObject();
-    Handle<String> subject_type = subject->GetRealNamedProperty(type_symbol)->ToString();
-    Handle<String> subject_value = subject->GetRealNamedProperty(value_symbol)->ToString();
+    Handle<Object> subject = obj->Get(subject_symbol)->ToObject();
+    Handle<String> subject_type = subject->Get(type_symbol)->ToString();
+    Handle<String> subject_value = subject->Get(value_symbol)->ToString();
     String::Utf8Value subject_string(subject_value);
     
     raptor_term* subject_term;
@@ -217,9 +217,9 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
         // error
     }
     
-    Handle<Object> predicate = obj->GetRealNamedProperty(pred_symbol)->ToObject();
-    Handle<String> predicate_type = predicate->GetRealNamedProperty(type_symbol)->ToString();
-    Handle<String> predicate_value = predicate->GetRealNamedProperty(value_symbol)->ToString();
+    Handle<Object> predicate = obj->Get(pred_symbol)->ToObject();
+    Handle<String> predicate_type = predicate->Get(type_symbol)->ToString();
+    Handle<String> predicate_value = predicate->Get(value_symbol)->ToString();
     String::Utf8Value predicate_string(predicate_value);
     
     raptor_term* predicate_term;
@@ -236,9 +236,9 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
         // error
     }
     
-    Handle<Object> object = obj->GetRealNamedProperty(object_symbol)->ToObject();
-    Handle<String> object_type = object->GetRealNamedProperty(type_symbol)->ToString();
-    Handle<String> object_value = object->GetRealNamedProperty(value_symbol)->ToString();
+    Handle<Object> object = obj->Get(object_symbol)->ToObject();
+    Handle<String> object_type = object->Get(type_symbol)->ToString();
+    Handle<String> object_value = object->Get(value_symbol)->ToString();
     String::Utf8Value object_string(object_value);
     
     raptor_term* object_term;
@@ -259,8 +259,8 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
     } else if (object_type->Equals(literal_symbol)) {
         // literal
         Handle<String> object_language;
-        if (obj->HasRealNamedProperty(lang_symbol)) {
-            object_language = obj->GetRealNamedProperty(lang_symbol)->ToString();
+        if (object->Has(lang_symbol)) {
+            object_language = object->Get(lang_symbol)->ToString();
             String::Utf8Value lang_string(object_language);
             
             // if (!object_language.IsEmpty()) {
@@ -282,8 +282,8 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
     } else if (object_type->Equals(tliteral_symbol)) {
         // typed literal
         Handle<String> object_datatype;
-        if (obj->HasRealNamedProperty(dtype_symbol)) {
-            object_datatype = obj->GetRealNamedProperty(dtype_symbol)->ToString();
+        if (object->Has(dtype_symbol)) {
+            object_datatype = object->Get(dtype_symbol)->ToString();
             String::Utf8Value dtype_string(object_datatype);
             
             raptor_uri* dtype_uri = raptor_new_uri_from_counted_string(world, 
@@ -304,6 +304,7 @@ raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) 
         }
     } else {
         // error
+        return NULL;
     }
     
     raptor_statement* statement;

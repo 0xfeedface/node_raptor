@@ -8,6 +8,12 @@ var s = {
     object:     {value: 'Resource One', type: 'literal'}
 }
 
+var s2 = {
+    subject:   {value: '_:123', type: 'bnode'}, 
+    predicate: {value: 'http://ns.aksw.org/scms#beginIndex', type: 'uri'}, 
+    object:    {value: '31', datatype: 'http://www.w3.org/2001/XMLSchema#int', lang: 'de'}
+}
+
 /*
 var serializer = raptor.newSerializer('rdfxml');
 
@@ -38,7 +44,8 @@ var serializer = raptor.newSerializer('turtle');
 
 process.nextTick(function () {
     serializer.serializeStart();
-    serializer.serializeStatement(s);
+    // serializer.serializeStatement(s);
+    serializer.serializeStatement(s2);
     serializer.serializeEnd();
 });
 
