@@ -193,7 +193,10 @@ Serializer::Serializer(const char* syntax_name) {
 }
 
 Serializer::~Serializer() {
-    raptor_free_serializer(serializer_);
+    if (serializer_) {
+        raptor_free_serializer(serializer_);
+    }
+    
     delete syntax_name_;
     raptor_world_set_log_handler(world, NULL, NULL);
 }
