@@ -148,7 +148,7 @@ Handle<Value> Parser::ParseBuffer(const Arguments& args) {
         }
         
         Handle<Object> buffer_obj = buffer_h->ToObject();
-        char *buffer_data = Buffer::Data(buffer_obj);
+        char* buffer_data = Buffer::Data(buffer_obj);
         size_t buffer_length = Buffer::Length(buffer_obj);
         
         parser->ParseBuffer(buffer_data, buffer_length, false);
@@ -199,30 +199,36 @@ Handle<Value> Parser::GetName (Local<String> property, const AccessorInfo& info)
 }
 
 void Parser::CallbackWrapper(void* user_data, raptor_statement* statement) {
-    Parser *p = static_cast<Parser*>(user_data);
+    Parser* p = static_cast<Parser*>(user_data);
     p->StatementHandler(statement);
 }
 
-void Parser::CallbackWrapper(void* user_data, raptor_namespace *nspace) {
-    Parser *p = static_cast<Parser*>(user_data);
+void Parser::CallbackWrapper(void* user_data, raptor_namespace* nspace) {
+    Parser* p = static_cast<Parser*>(user_data);
     p->NamespaceHandler(nspace);
 }
 
-void Parser::CallbackWrapper(void *user_data, raptor_log_message* message) {
-    Parser *p = static_cast<Parser*>(user_data);
+void Parser::CallbackWrapper(void* user_data, raptor_log_message* message) {
+    Parser* p = static_cast<Parser*>(user_data);
     p->LogMessageHandler(message);
 }
 
 Parser::Parser(const char* name) {
     // keep parser name; actual parser created lazily
-    syntax_name_ = new char[strlen(name)];
-    strcpy(syntax_name_, const_cast<char*>(name));
+    if (raptor_world_is_parser_name(world, name)) {
+        size_t name_len = strlen(name);
+        syntax_name_ = new char[name_len];
+        memcpy(syntax_name_, const_cast<char*>(name), name_len);
+    } else {
+        syntax_name_ = NULL;    // will create default parser
+    }
     
     raptor_parser* parser = raptor_new_parser(world, syntax_name_);
-    parser_ = parser;
-    
+    assert(parser != NULL);
     raptor_parser_set_statement_handler(parser, this, Parser::CallbackWrapper);
     raptor_parser_set_namespace_handler(parser, this, Parser::CallbackWrapper);
+    
+    parser_ = parser;
     
     // log handling per world
     raptor_world_set_log_handler(world, this, Parser::CallbackWrapper);
@@ -231,8 +237,14 @@ Parser::Parser(const char* name) {
 }
 
 Parser::~Parser() {
-    raptor_free_parser(parser_);
-    delete syntax_name_;
+    if (parser_) {
+        raptor_free_parser(parser_);
+    }
+    
+    if (syntax_name_) {
+        delete syntax_name_;
+    }
+    
     raptor_world_set_log_handler(world, NULL, NULL);
 }
 
@@ -258,6 +270,7 @@ void Parser::ParseFile(const char* filename, const char* base) {
         base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
     }
     
+    assert(parser_ != NULL);
     raptor_parser_parse_file(parser_, file_uri, base_uri);
     
     Emit(end_symbol, 0, NULL);
@@ -280,6 +293,7 @@ void Parser::ParseURI(const char* uri_string, const char* base) {
         base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
     }
     
+    assert(parser_ != NULL);
     raptor_parser_parse_uri(parser_, uri, base_uri);
     
     Emit(end_symbol, 0, NULL);
@@ -297,6 +311,7 @@ void Parser::ParseStart(const char* base) {
     raptor_uri* base_uri = NULL;
     base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
     
+    assert(parser_ != NULL);
     raptor_parser_parse_start(parser_, base_uri);
     
     if (base_uri) {
@@ -305,6 +320,7 @@ void Parser::ParseStart(const char* base) {
 }
 
 void Parser::ParseBuffer(const char* buffer, size_t buffer_length, bool end) {
+    assert(parser_ != NULL);
     raptor_parser_parse_chunk(parser_, reinterpret_cast<const unsigned char*>(buffer), buffer_length, end);
     
     if (end) {
@@ -350,7 +366,7 @@ void Parser::StatementHandler(raptor_statement* statement) {
     Emit(stmt_symbol, 1, args);
 }
 
-void Parser::NamespaceHandler(raptor_namespace *nspace) {
+void Parser::NamespaceHandler(raptor_namespace* nspace) {
     raptor_uri* namespace_uri = raptor_namespace_get_uri(nspace);
     unsigned char* namespace_uri_string = raptor_uri_to_string(namespace_uri);
     
