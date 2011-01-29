@@ -187,9 +187,15 @@ Handle<Value> Serializer::GetName(Local<String> property, const AccessorInfo& in
 
 Serializer::Serializer(const char* syntax_name) {
     // keep syntax name; actual serializer is created lazily
-    syntax_name_ = new char[strlen(syntax_name)];
-    state_ = SERIALIZER_STATE_INIT;
-    strcpy(syntax_name_, const_cast<char*>(syntax_name));
+    assert(world != NULL);
+    if (raptor_world_is_serializer_name(world, syntax_name) > 0) {
+        int syntax_name_len = strlen(syntax_name);
+        syntax_name_ = new char[strlen(syntax_name)];
+        state_ = SERIALIZER_STATE_INIT;
+        memcpy(syntax_name_, const_cast<char*>(syntax_name), syntax_name_len);
+    } else {
+        syntax_name_ = NULL;
+    }
 }
 
 Serializer::~Serializer() {
@@ -197,16 +203,25 @@ Serializer::~Serializer() {
         raptor_free_serializer(serializer_);
     }
     
-    delete syntax_name_;
+    if (syntax_name_) {
+        delete syntax_name_;
+    }
+    
+    // deregister log handler
+    assert(world != NULL);
     raptor_world_set_log_handler(world, NULL, NULL);
 }
 
 void Serializer::SerializeToFile(const char* filename) {
     serializer_ = raptor_new_serializer(world, syntax_name_);
+    assert(serializer_ != NULL);
+    assert(filename != NULL);
     raptor_serializer_start_to_filename(serializer_, filename);
 }
 
 void Serializer::SerializeStart(const char* base) {
+    assert(world != NULL);
+    assert(syntax_name_ != NULL);
     serializer_ = raptor_new_serializer(world, syntax_name_);
     
     raptor_iostream* iostream = NULL;
@@ -224,6 +239,8 @@ void Serializer::SerializeStart(const char* base) {
         base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
     }
     
+    assert(serializer_ != NULL);
+    assert(iostream != NULL);
     raptor_serializer_start_to_iostream(serializer_, base_uri, iostream);
     
     if (base_uri) {
@@ -234,6 +251,7 @@ void Serializer::SerializeStart(const char* base) {
 }
 
 void Serializer::SerializeEnd() {
+    assert(serializer_ != NULL);
     raptor_serializer_serialize_end(serializer_);
     if (statement_stream_) {
         raptor_free_iostream(statement_stream_);
@@ -259,13 +277,20 @@ void Serializer::SerializeEnd() {
 }
 
 void Serializer::SetNamespace(const char* prefix, const char* nspace) {
+    assert(world != NULL);
+    assert(nspace != NULL);
     raptor_uri* nspace_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(nspace));
+    assert(serializer_ != NULL);
+    assert(nspace_uri != NULL);
+    assert(prefix != NULL);
     raptor_serializer_set_namespace(serializer_, 
                                     nspace_uri, 
                                     reinterpret_cast<const unsigned char*>(prefix));
 }
 
 void Serializer::SerializeStatement(const raptor_statement* statement) {
+    assert(serializer_ != NULL);
+    assert(statement != NULL);
     raptor_serializer_serialize_statement(serializer_, const_cast<raptor_statement*>(statement));
 }
 
