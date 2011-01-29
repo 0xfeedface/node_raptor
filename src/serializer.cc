@@ -108,6 +108,12 @@ Handle<Value> Serializer::SerializeStart(const Arguments& args) {
 
 Handle<Value> Serializer::SerializeEnd(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
+    
+    if (serializer->state_ != SERIALIZER_STATE_SERIALIZING) {
+        return ThrowException(Exception::Error(
+            String::New("Non serialization to end.")));
+    }
+    
     serializer->SerializeEnd();
     
     serializer->state_ = SERIALIZER_STATE_INIT;
@@ -136,10 +142,13 @@ Handle<Value> Serializer::SetNamespace(const Arguments& args) {
 
 Handle<Value> Serializer::SerializeStatement(const Arguments& args) {
     Serializer* serializer = ObjectWrap::Unwrap<Serializer>(args.This());
+    
+    if (serializer->state_ != SERIALIZER_STATE_SERIALIZING) {
+        return ThrowException(Exception::Error(
+            String::New("Serialization must be started first.")));
+    }
+    
     HandleScope scope;
-    
-    Handle<Value> exception;
-    
     if (!args.Length() == 1 || !args[0]->IsObject()) {
         ThrowException(Exception::Error(String::New("First should be a JSON triples structure.")));
         return Undefined();
@@ -188,18 +197,20 @@ Handle<Value> Serializer::GetName(Local<String> property, const AccessorInfo& in
 Serializer::Serializer(const char* syntax_name) {
     // keep syntax name; actual serializer is created lazily
     if (raptor_world_is_serializer_name(world, syntax_name) > 0) {
-        int syntax_name_len = strlen(syntax_name);
-        syntax_name_ = new char[strlen(syntax_name)];
-        state_ = SERIALIZER_STATE_INIT;
-        memcpy(syntax_name_, const_cast<char*>(syntax_name), syntax_name_len);
+        size_t syntax_name_len = strlen(syntax_name);
+        syntax_name_ = new char[strlen(syntax_name)+1];
+        strcpy(syntax_name_, const_cast<char*>(syntax_name));
     } else {
         syntax_name_ = NULL;
     }
+    
+    state_ = SERIALIZER_STATE_INIT;
 }
 
 Serializer::~Serializer() {
     if (serializer_) {
-        raptor_free_serializer(serializer_);
+        // FIXME: segfaults for some reason
+        // raptor_free_serializer(serializer_);
     }
     
     if (syntax_name_) {
@@ -211,6 +222,7 @@ Serializer::~Serializer() {
 }
 
 void Serializer::SerializeToFile(const char* filename) {
+    assert(state_ == SERIALIZER_STATE_INIT);
     serializer_ = raptor_new_serializer(world, syntax_name_);
     assert(serializer_ != NULL);
     assert(filename != NULL);
@@ -218,7 +230,16 @@ void Serializer::SerializeToFile(const char* filename) {
 }
 
 void Serializer::SerializeStart(const char* base) {
+    assert(state_ == SERIALIZER_STATE_INIT);
+    assert(world != NULL);
+    assert(raptor_world_is_serializer_name(world, syntax_name_) > 0);
     serializer_ = raptor_new_serializer(world, syntax_name_);
+    if (!serializer_) {
+        ThrowException(Exception::Error(
+            String::New("Could not create serializer for syntax name")));
+        return;
+    }
+    assert(serializer_ != NULL);
     
     raptor_iostream* iostream = NULL;
     iostream = raptor_new_iostream_to_string(world, 
@@ -235,7 +256,6 @@ void Serializer::SerializeStart(const char* base) {
         base_uri = raptor_new_uri(world, reinterpret_cast<const unsigned char*>(base));
     }
     
-    assert(serializer_ != NULL);
     assert(iostream != NULL);
     raptor_serializer_start_to_iostream(serializer_, base_uri, iostream);
     
@@ -247,6 +267,7 @@ void Serializer::SerializeStart(const char* base) {
 }
 
 void Serializer::SerializeEnd() {
+    assert(state_ == SERIALIZER_STATE_SERIALIZING);
     assert(serializer_ != NULL);
     raptor_serializer_serialize_end(serializer_);
     if (statement_stream_) {
@@ -281,6 +302,7 @@ void Serializer::SetNamespace(const char* prefix, const char* nspace) {
 }
 
 void Serializer::SerializeStatement(const raptor_statement* statement) {
+    assert(state_ == SERIALIZER_STATE_SERIALIZING);
     assert(serializer_ != NULL);
     raptor_serializer_serialize_statement(serializer_, const_cast<raptor_statement*>(statement));
 }
