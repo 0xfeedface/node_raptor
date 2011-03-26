@@ -214,11 +214,12 @@ void Parser::CallbackWrapper(void* user_data, raptor_log_message* message) {
 }
 
 Parser::Parser(const char* name) {
-    // keep parser name; actual parser created lazily
     if (raptor_world_is_parser_name(world, name)) {
         size_t name_len = strlen(name);
-        syntax_name_ = new char[name_len];
+        syntax_name_ = new char[name_len+1];
         memcpy(syntax_name_, const_cast<char*>(name), name_len);
+        // set termination manually
+        syntax_name_[name_len] = '\0';
     } else {
         syntax_name_ = NULL;    // will create default parser
     }
