@@ -1,20 +1,40 @@
-# srcdir  = 'src'
-# blddir  = './build'
-# VERSION = '0.0.1'
+import os
+import Options
+
 RAPTOR_PREFIX = '/usr/local'
 
-def set_options(opt):
-    opt.tool_options('compiler_cxx')
+def set_options(ctx):
+    ctx.add_option('--clang', action='store_true', default='', dest='use_clang', help='Uses the clang compiler')
+    ctx.add_option('--analyze', action='store_true', default='', dest='analyze', help='Runs the clang static analyzer (implies --clang)')
+    ctx.tool_options('compiler_cxx')
 
-def configure(conf):
-    conf.check_tool('compiler_cxx')
-    conf.check_tool('node_addon')
+def configure(ctx):
+    if Options.options.analyze:
+        ctx.env.ANALYZE = Options.options.analyze
+        Options.options.use_clang = 1
 
-def build(bld):    
-    # obj.cxxflags = ['-g', '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-Wall']
-    obj          = bld.new_task_gen('cxx', 'shlib', 'node_addon')
+    if Options.options.use_clang:
+        os.environ['CXX'] = '/usr/bin/clang'
+
+    ctx.check_tool('compiler_cxx')
+    ctx.check_tool('node_addon')
+
+def build(ctx):
+    obj = ctx.new_task_gen('cxx', 'shlib', 'node_addon')
+
+    # Analyze
+    if ctx.env.ANALYZE:
+        obj.cxxflags = ['-g', '-Wall', '--analyze']
+    else:
+        obj.cxxflags = ['-g', '-Wall']
+
+    obj.find_sources_in_dirs('src')
+
     obj.target   = 'raptor'
-    obj.source   = ['src/bindings.cc', 'src/parser.cc', 'src/serializer.cc', 'src/statement.cc']
-    obj.includes = [RAPTOR_PREFIX + '/include/raptor2']
-    obj.lib      = ['raptor2']
-    obj.libpath  = [RAPTOR_PREFIX + '/lib']
+    obj.includes = RAPTOR_PREFIX + '/include/raptor2'
+    obj.lib      = 'raptor2'
+    obj.libpath  = RAPTOR_PREFIX + '/lib'
+
+    # obj.staticlibpath = RAPTOR_PREFIX + '/lib'
+    # obj.staticlib     = 'raptor2'
+
