@@ -32,9 +32,10 @@ Handle<Value> Parser::Initialize(const Arguments& args) {
                                        ReadOnly);
 
     Handle<Function> function = t->GetFunction();
-    Handle<Value> arguments[args.Length()];
+    Handle<Value> *arguments = new Handle<Value> [args.Length()];
     ExtractArguments(args, arguments);
     Handle<Object> parser = function->NewInstance(args.Length(), arguments);
+    delete arguments;
     
     if (args.Length() == 2 && args[1]->IsFunction()) {
         const int argc = 1;

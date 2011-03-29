@@ -28,9 +28,10 @@ Handle<Value> Serializer::Initialize(const Arguments& args) {
                                        ReadOnly);
 
     Handle<Function> function = t->GetFunction();
-    Handle<Value> arguments[args.Length()];
+    Handle<Value> *arguments = new Handle<Value> [args.Length()];
     ExtractArguments(args, arguments);
     Handle<Object> serializer = function->NewInstance(args.Length(), arguments);
+    delete arguments;
     
     if (args.Length() == 2 && args[1]->IsFunction()) {
         const int argc = 1;
@@ -197,6 +198,7 @@ Handle<Value> Serializer::GetName(Local<String> property, const AccessorInfo& in
 Serializer::Serializer(const char* syntax_name) {
     // keep syntax name; actual serializer is created lazily
     if (raptor_world_is_serializer_name(world, syntax_name) > 0) {
+#pragma unused (syntax_name_len)
         size_t syntax_name_len = strlen(syntax_name);
         syntax_name_ = new char[strlen(syntax_name)+1];
         strcpy(syntax_name_, const_cast<char*>(syntax_name));
@@ -307,7 +309,7 @@ void Serializer::SerializeStatement(const raptor_statement* statement) {
     raptor_serializer_serialize_statement(serializer_, const_cast<raptor_statement*>(statement));
 }
 
-Handle<Value>* Serializer::ExtractArguments(const Arguments& args, Handle<Value>* arguments) {
+Handle<Value> *Serializer::ExtractArguments(const Arguments& args, Handle<Value> *arguments) {
     for (int i = 0; i < args.Length(); ++i) {
         arguments[i] = args[i];
     }
