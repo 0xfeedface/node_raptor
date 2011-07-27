@@ -1,4 +1,5 @@
-## Raptor RDF parser and serializer bindings for Node.js
+Raptor RDF parser and serializer bindings for Node.js
+=====================================================
 
 Experimental, use at own risk!
 
@@ -6,7 +7,8 @@ Experimental, use at own risk!
 
 These bindings support [raptor 2](http://librdf.org/raptor/api/) only (v1.9.0 or greater); `libraptor` needs to be installed on your system. Set `RAPTOR_PREFIX` in  `wscript` file accordingly.
 
-## General Usage
+General Usage
+=============
 
 Include raptor bindings with
 
@@ -17,9 +19,11 @@ You can create parsers or serializers for certain syntax types like so:
     var parser = raptor.newParser('rdfxml');
     var serializer = raptor.newSerializer('turtle');
 
-## API
+API
+===
 
-### Parser
+Parser
+------
 
 * `parser.parseFile(pathName [, base]);`
 
@@ -45,15 +49,18 @@ You can create parsers or serializers for certain syntax types like so:
 
 * `parser.name` holds the syntax name that was used with `raptor.newParser` (e.&thinsp;g. 'rdfxml').
 
-### Serializer
+Serializer
+----------
 
 
-## Emitted Events
+Emitted Events
+--------------
 
 On the following conditions, events are emitted:
 
-### A new statement was parsed
-    
+A new statement was parsed
+--------------------------
+
     parser.on('statement', function (statement) {
         // do something with statement
     });
@@ -79,6 +86,15 @@ Statements are exposed with the following structure:
                                      /* return statement as N-triples string */
         }
     }
+
+A new resource was parsed
+-------------------------
+
+  parser.on('resource', function (r) {
+    // do something with resource
+  });
+
+The resource
 
 ### Parsing has ended
 Either by reaching `EOF`, or by interruption due to `parser.abort()` being called.
