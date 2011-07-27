@@ -352,12 +352,15 @@ void Parser::SetOption(const char* option_name, const char* string_option_value,
 
 void Parser::StatementHandler(raptor_statement* statement) {
     HandleScope scope;
+
+    // unsigned char *s = raptor_term_to_string(statement->subject);
+    // printf("New subject %p %s\n", reinterpret_cast<void *>(statement->subject), s);
     
     // get new statement object
     Handle<Object> statement_instance = Statement::NewInstance();
     
     // external objects needs to be copied
-    // FIXME: probably leakes
+    // FIXME: probably leaks
     raptor_statement* statement_copy = raptor_statement_copy(statement);
     Handle<External> statement_instance_ptr = External::New(statement_copy);
     statement_instance->SetInternalField(0, statement_instance_ptr);
