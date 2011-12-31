@@ -18,7 +18,7 @@ const MAX_STATEMENTS = Number.MAX_VALUE;
 
 var util    = require('util'), 
     fs      = require('fs'), 
-    raptor  = require('./../build/default/raptor');
+    raptor  = require('./../raptor.js');
 
 var time;
 var filename = process.argv[2];

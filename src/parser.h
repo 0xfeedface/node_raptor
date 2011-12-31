@@ -18,7 +18,8 @@
 #define NODE_RAPTOR_PARSER_H_
 
 #include <node.h>
-#include <node_events.h>
+#include <node_object_wrap.h>
+//#include <node_events.h>
 #include <raptor.h>
 
 #include "statics.h"
@@ -32,7 +33,8 @@ enum parser_state {
 using namespace v8;
 using namespace node;
 
-class Parser : public EventEmitter {
+//class Parser : public EventEmitter {
+class Parser : public ObjectWrap {
 public:
     static Handle<Value> Initialize(const Arguments& args);
     static Handle<Value> New(const Arguments& args);
@@ -51,6 +53,7 @@ public:
     Parser(const char* name);
     ~Parser();
 protected:
+
     void Abort();
     
     void ParseFile(const char* filename, const char* base);

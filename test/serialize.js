@@ -15,19 +15,19 @@
  */
 
 var util    = require('util'), 
-    raptor  = require('./../build/default/raptor'), 
+    raptor  = require('./../raptor'), 
     fs      = require('fs');
 
 var s = {
     subject:    {value: 'http://example.com/resource1', type: 'uri'}, 
     predicate:  {value: 'http://xmlns.com/foaf/0.1/name', type: 'uri'}, 
-    object:     {value: 'Resource One', type: 'literal'}
+    object:     {value: 'Resource One', language: 'en', type: 'literal'}
 }
 
 var s2 = {
     subject:   {value: '_:123', type: 'bnode'}, 
     predicate: {value: 'http://ns.aksw.org/scms#beginIndex', type: 'uri'}, 
-    object:    {value: '31', datatype: 'http://www.w3.org/2001/XMLSchema#int', lang: 'de'}
+    object:    {value: '31', datatype: 'http://www.w3.org/2001/XMLSchema#int', type:'typed-literal'}
 }
 
 /*
@@ -60,7 +60,7 @@ var serializer = raptor.newSerializer('turtle');
 
 process.nextTick(function () {
     serializer.serializeStart();
-    // serializer.serializeStatement(s);
+    //serializer.serializeStatement(s);
     serializer.serializeStatement(s2);
     serializer.serializeEnd();
 });
