@@ -25,10 +25,9 @@
 
 Handle<Value> Parser::Initialize(const Arguments& args) {
     HandleScope scope;
-
+    
     Handle<FunctionTemplate> t = FunctionTemplate::New(New);
 
-    t->Inherit(EventEmitter::constructor_template);
     t->InstanceTemplate()->SetInternalFieldCount(1);
 
     NODE_SET_PROTOTYPE_METHOD(t, "parseFile", ParseFile);
@@ -65,6 +64,7 @@ Handle<Value> Parser::Initialize(const Arguments& args) {
 
 Handle<Value> Parser::New(const Arguments& args) {
     HandleScope scope;
+    
     
     Handle<String> parser_name;
     if (args.Length() == 0) {
@@ -118,7 +118,7 @@ Handle<Value> Parser::ParseURI(const Arguments& args) {
         String::Utf8Value base(args[1]->ToString());
         parser->ParseURI(*uri_string, *base);
     } else {
-        parser->ParseURI(*uri_string, NULL);
+      parser->ParseURI(*uri_string, NULL);
     }
     
     return Undefined();
@@ -291,7 +291,19 @@ void Parser::ParseFile(const char* filename, const char* base) {
     assert(parser_ != NULL);
     raptor_parser_parse_file(parser_, file_uri, base_uri);
     
-    Emit(end_symbol, 0, NULL);
+    Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+    assert(emit_v->IsFunction());
+    Local<Function> emit_f = emit_v.As<Function>();
+
+    Handle<Value> argv[1] = {
+      String::New("end")
+    };
+
+    TryCatch tc;
+
+    emit_f->Call(this->handle_, 1, argv);
+    
+    //Emit(end_symbol, 0, NULL);
     
     if (base_uri) {
         raptor_free_uri(base_uri);
@@ -300,6 +312,10 @@ void Parser::ParseFile(const char* filename, const char* base) {
     if (file_uri) {
         raptor_free_uri(file_uri);
     }
+
+    if (tc.HasCaught())
+      FatalException(tc);
+
 }
 
 void Parser::ParseURI(const char* uri_string, const char* base) {
@@ -314,7 +330,19 @@ void Parser::ParseURI(const char* uri_string, const char* base) {
     assert(parser_ != NULL);
     raptor_parser_parse_uri(parser_, uri, base_uri);
     
-    Emit(end_symbol, 0, NULL);
+    Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+    assert(emit_v->IsFunction());
+    Local<Function> emit_f = emit_v.As<Function>();
+
+    Handle<Value> argv[1] = {
+      String::New("end")
+    };
+
+    TryCatch tc;
+
+    emit_f->Call(this->handle_, 1, argv);
+
+    //Emit(end_symbol, 0, NULL);
     
     if (uri) {
         raptor_free_uri(uri);
@@ -323,6 +351,10 @@ void Parser::ParseURI(const char* uri_string, const char* base) {
     if (base_uri) {
         raptor_free_uri(base_uri);
     }
+
+    if (tc.HasCaught())
+      FatalException(tc);
+
 }
 
 void Parser::ParseStart(const char* base) {
@@ -342,7 +374,23 @@ void Parser::ParseBuffer(const char* buffer, size_t buffer_length, bool end) {
     raptor_parser_parse_chunk(parser_, reinterpret_cast<const unsigned char*>(buffer), buffer_length, end);
     
     if (end) {
-        Emit(end_symbol, 0, NULL);
+
+      Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+      assert(emit_v->IsFunction());
+      Local<Function> emit_f = emit_v.As<Function>();
+
+      Handle<Value> argv[1] = {
+        String::New("end")
+      };
+
+      TryCatch tc;
+
+      emit_f->Call(this->handle_, 1, argv);
+
+      if (tc.HasCaught())
+        FatalException(tc);
+
+      //Emit(end_symbol, 0, NULL);
     }
 }
 
@@ -381,10 +429,26 @@ void Parser::StatementHandler(raptor_statement* statement) {
     Handle<External> statement_instance_ptr = External::New(statement_copy);
     statement_instance->SetInternalField(0, statement_instance_ptr);
     
-    Handle<Value> args[1];
-    args[0] = statement_instance;
+    //Handle<Value> args[1];
+    //args[0] = statement_instance;
     
-    Emit(stmt_symbol, 1, args);
+    Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+    assert(emit_v->IsFunction());
+    Local<Function> emit_f = emit_v.As<Function>();
+
+    Handle<Value> argv[2] = {
+      String::New("statement"),
+      statement_instance
+    };
+
+    TryCatch tc;
+
+    emit_f->Call(this->handle_, 2, argv);
+
+    if (tc.HasCaught())
+      FatalException(tc);
+
+    //Emit(stmt_symbol, 1, args);
 }
 
 void Parser::NamespaceHandler(raptor_namespace* nspace) {
@@ -396,15 +460,32 @@ void Parser::NamespaceHandler(raptor_namespace* nspace) {
     
     HandleScope scope;
     
-    Handle<Value> args[2];
-    args[0] = String::New(reinterpret_cast<const char*>(namespace_prefix), length);
-    args[1] = String::New(reinterpret_cast<const char*>(namespace_uri_string));
+    //Handle<Value> args[2];
+    //args[0] = String::New(reinterpret_cast<const char*>(namespace_prefix), length);
+    //args[1] = String::New(reinterpret_cast<const char*>(namespace_uri_string));
     
     if (namespace_uri_string) {
         raptor_free_memory(namespace_uri_string);
     }
     
-    Emit(nmspc_symbol, 2, args);
+    Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+    assert(emit_v->IsFunction());
+    Local<Function> emit_f = emit_v.As<Function>();
+
+    Handle<Value> argv[3] = {
+      String::New("namespace"),
+      String::New(reinterpret_cast<const char*>(namespace_prefix), length),
+      String::New(reinterpret_cast<const char*>(namespace_uri_string))
+    };
+
+    TryCatch tc;
+
+    emit_f->Call(this->handle_, 3, argv);
+
+    if (tc.HasCaught())
+      FatalException(tc);
+
+    //Emit(nmspc_symbol, 2, args);
 }
 
 void Parser::LogMessageHandler(raptor_log_message* message) {
@@ -429,10 +510,29 @@ void Parser::LogMessageHandler(raptor_log_message* message) {
         break;
     }
     
-    Handle<Value> args[3];
-    args[0] = type;
-    args[1] = String::New(message->text);
-    args[2] = Integer::New(message->code);
+    //Handle<Value> args[3];
+    //args[0] = type;
+    //args[1] = String::New(message->text);
+    //args[2] = Integer::New(message->code);
     
-    Emit(message_symbol, 3, args);
+
+    Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+    assert(emit_v->IsFunction());
+    Local<Function> emit_f = emit_v.As<Function>();
+
+    Handle<Value> argv[4] = {
+      String::New("namespace"),
+      type,
+      String::New(message->text),
+      Integer::New(message->code)
+    };
+
+    TryCatch tc;
+
+    emit_f->Call(this->handle_, 4, argv);
+
+    if (tc.HasCaught())
+      FatalException(tc);
+
+    //Emit(message_symbol, 3, args);
 }

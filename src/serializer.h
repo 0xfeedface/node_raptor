@@ -18,7 +18,8 @@
 #define NODE_RAPTOR_SERIALIZER_H_
 
 #include <node.h>
-#include <node_events.h>
+//#include <node_events.h>
+#include <node_object_wrap.h>
 #include <raptor.h>
 
 using namespace v8;
@@ -29,7 +30,7 @@ enum serializer_state {
     SERIALIZER_STATE_SERIALIZING, 
 };
 
-class Serializer : public EventEmitter {
+class Serializer : public ObjectWrap {
 public:
     static Handle<Value> Initialize(const Arguments& args);
     static Handle<Value> New(const Arguments& args);

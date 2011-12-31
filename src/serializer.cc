@@ -26,7 +26,7 @@ Handle<Value> Serializer::Initialize(const Arguments& args) {
 
     Handle<FunctionTemplate> t = FunctionTemplate::New(New);
 
-    t->Inherit(EventEmitter::constructor_template);
+    //t->Inherit(EventEmitter::constructor_template);
     t->InstanceTemplate()->SetInternalFieldCount(1);
 
     NODE_SET_PROTOTYPE_METHOD(t, "serializeToFile", SerializeToFile);
@@ -303,12 +303,40 @@ void Serializer::SerializeEnd() {
         statement_string_ = NULL;
     }
     
-    Handle<Value> args[1];
-    args[0] = data;
+    //Handle<Value> args[1];
+    //args[0] = data;
     
     // TODO: serialize in chunks w/ raptor_new_iostream_from_handler?
-    Emit(data_symbol, 1, args);
-    Emit(end_symbol, 0, NULL);
+    Local<Value> emit_v = this->handle_->Get(String::NewSymbol("emit"));
+    assert(emit_v->IsFunction());
+    Local<Function> emit_f = emit_v.As<Function>();
+
+    Handle<Value> argv[2] = {
+      String::New("data"),
+      data
+    };
+
+    TryCatch tc;
+
+    emit_f->Call(this->handle_, 2, argv);
+
+    if (tc.HasCaught())
+      FatalException(tc);
+
+    Handle<Value> argv2[1] = {
+      String::New("end")
+    };
+
+    TryCatch tc2;
+
+    emit_f->Call(this->handle_, 1, argv2);
+
+    if (tc2.HasCaught())
+      FatalException(tc);
+
+
+    //Emit(data_symbol, 1, args);
+    //Emit(end_symbol, 0, NULL);
 }
 
 void Serializer::SetNamespace(const char* prefix, const char* nspace) {
