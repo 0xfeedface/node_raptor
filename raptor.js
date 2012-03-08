@@ -1,5 +1,5 @@
 var events = require('events');
-var raptorTarget = require(__dirname + '/build/Release/raptor.node');
+var bindings = require(__dirname + '/build/Release/bindings');
 
 
 function inherits(target, source) {
@@ -7,14 +7,13 @@ function inherits(target, source) {
         target[k] = source.prototype[k];
 }
 
-
 exports.newParser = function(mimeType, cb) {
-    if(cb==null) {
-        var parser = raptorTarget.newParser(mimeType);
+    if (undefined == cb) {
+        var parser = bindings.newParser(mimeType);
         inherits(parser, events.EventEmitter);
         return parser;
     } else {
-        var res = raptorTarget.newParser(mimeType, function(parser) {
+        var res = bindings.newParser(mimeType, function(parser) {
             inherits(parser, events.EventEmitter);
             cb(parser);
         });
@@ -25,10 +24,10 @@ exports.newParser = function(mimeType, cb) {
 exports.newSerializer = function(mimeType) {
     var serializer = null;
 
-    if(mimeType == null) {
-        serializer = raptorTarget.newSerializer();
+    if (undefined == mimeType) {
+        serializer = bindings.newSerializer();
     } else {
-        serializer = raptorTarget.newSerializer(mimeType);
+        serializer = bindings.newSerializer(mimeType);
     }
 
     inherits(serializer, events.EventEmitter);
