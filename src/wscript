@@ -6,7 +6,7 @@ blddir='../build'
 
 # Check whether envinronment variable has been set by Makefile
 if 'RAPTOR_PREFIX' in os.environ:
-    RAPTOR_PREFIX = os.environ['RAPTOR_PREFIX'] + '/dist'
+    RAPTOR_PREFIX = os.environ['RAPTOR_PREFIX']
 else:
     RAPTOR_PREFIX = '/usr/local'
 
