@@ -5,7 +5,14 @@ Experimental, use at own risk!
 
 [Raptor](http://librdf.org/raptor/) is a mature RDF parsing and serializing library written in C by Dave Beckett. It is part of Redland, the RDF handling and storage library.
 
-These bindings support [raptor 2](http://librdf.org/raptor/api/) only (v1.9.0 or greater); `libraptor` needs to be installed on your system. Set `RAPTOR_PREFIX` in  `wscript` file accordingly.
+These bindings support [raptor 2](http://librdf.org/raptor/api/) only (v1.9.0 or greater).
+
+Building
+========
+
+A version of `libraptor2` is downloaded, compiled and statically linked against automatically. If you prefer to use a version of `libraptor2` already installed on your system (e. g. under `/usr/local`), just 
+
+    export RAPTOR_PREFIX=/usr/local
 
 General Usage
 =============
