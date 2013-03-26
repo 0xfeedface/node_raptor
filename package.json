@@ -1,10 +1,10 @@
 { "name": "raptor",
-  "version": "0.1.0-1",
+  "version": "0.1.0-2",
   "description": "Node bindings for libraptor2.",
   "keywords": ["rdf", "turtle", "rdfxml", "libraptor"],
   "author": {
     "name": "Norman Heino",
-    "email": "norman.heino@gamil.com"
+    "email": "norman.heino@gmail.com"
   },
   "contributors": ["Antonio Garrote"],
   "bugs": {
@@ -15,15 +15,10 @@
     "url" : "http://github.com/0xfeedface/node_raptor.git"
   },
   "engines": {
-    "node": ">=0.5.0"
+    "node": ">=0.8.0"
   },
-  "main": "raptor",
+  "main": "index.js",
   "directories": {
     "lib": "."
-  },
-  "scripts": {
-    "preinstall": "make",
-    "preuninstall": "make clean"
-  },
-  "preferGlobal": true
+  }
 }
