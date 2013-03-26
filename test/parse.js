@@ -17,7 +17,7 @@
 const MAX_STATEMENTS = Number.MAX_VALUE;
 
 var util    = require('util');
-var raptor = require('raptor');
+var raptor = require('..');
 
 var time;
 

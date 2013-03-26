@@ -15,7 +15,7 @@
  */
 
 var util    = require('util'), 
-    raptor  = require('./../raptor'), 
+    raptor  = require('..'), 
     fs      = require('fs');
 
 var s = {

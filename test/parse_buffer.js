@@ -18,12 +18,14 @@ const MAX_STATEMENTS = Number.MAX_VALUE;
 
 var util    = require('util'), 
     fs      = require('fs'), 
-    raptor  = require('./../raptor.js');
+    raptor  = require('..');
 
 var time;
-var filename = process.argv[2];
-
-var fileStream = fs.createReadStream(filename);
+/*
+ * var filename = process.argv[2];
+ * 
+ * var fileStream = fs.createReadStream(filename);
+ */
 var parser = raptor.newParser('turtle');
 
 var time = Date.now();

@@ -18,7 +18,7 @@ const fileURI = 'http://xmlns.com/foaf/spec/index.rdf';
 const MAX_STATEMENTS = Number.MAX_VALUE;
 
 var util    = require('util'), 
-    raptor  = require('./../raptor');
+    raptor  = require('..');
 
 var time;
 
