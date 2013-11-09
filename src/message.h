@@ -14,14 +14,24 @@
  *    limitations under the License.
  */
 
-#include <v8.h>
-#include <node.h>
+#pragma once
 
-#include "parser_wrapper.h"
+#include <raptor.h>
 
-// Node module initializer
-void InitModule(v8::Handle<v8::Object> exports) {
-  ParserWrapper::Initialize(exports);
-}
+class Message {
+public:
+  explicit Message(raptor_log_message const* message);
+  std::string const& type() const { return type_; }
+  std::string const& text() const { return text_; }
 
-NODE_MODULE(bindings, InitModule)
+private:
+  static std::string kMessageTypeNone;
+  static std::string kMessageTypeDebug;
+  static std::string kMessageTypeInfo;
+  static std::string kMessageTypeWarning;
+  static std::string kMessageTypeError;
+  static std::string kMessageTypeFatal;
+
+  std::string& type_;
+  std::string  text_;
+};

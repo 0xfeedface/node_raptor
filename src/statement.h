@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Norman Heino <norman.heino@gmail.com>
+ * Copyright 2010–2013 Norman Heino <norman.heino@gmail.com>
  * 
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,23 +14,63 @@
  *    limitations under the License.
  */
 
-#ifndef NODE_RAPTOR_STATEMENT_H_
-#define NODE_RAPTOR_STATEMENT_H_
+#pragma once
 
-#include <node.h>
-
-using namespace v8;
+#include <string>
+#include <raptor.h>
 
 class Statement {
 public:
-    static Handle<Object> NewInstance();
-    static Handle<Value> ToString(const Arguments& args);
-    static Handle<Value> SubjectAccessor(Local<String> property, const AccessorInfo& info);
-    static Handle<Value> PredicateAccessor(Local<String> property, const AccessorInfo& info);
-    static Handle<Value> ObjectAccessor(Local<String> property, const AccessorInfo& info);
-    static raptor_statement* ConvertObjectToRaptorStatement(Handle<Object> obj);
-private:
-    static Handle<ObjectTemplate> template_;
-};
+  Statement(raptor_statement*);
+  Statement(Statement&&);
+  ~Statement();
+  bool operator==(Statement const&);
+  Statement& operator=(Statement&&);
 
-#endif
+  std::string subjectType() const;
+  std::string subjectValue() const;
+
+  std::string predicateType() const;
+  std::string predicateValue() const;
+
+  std::string objectType() const;
+  std::string objectValue() const;
+
+  std::string objectDatatype() const {
+    raptor_uri* datatype_uri = statement_->object->value.literal.datatype;
+    unsigned char* datatype_uri_string = raptor_uri_to_string(datatype_uri);
+    std::string value(reinterpret_cast<char*>(datatype_uri_string));
+    if (datatype_uri_string) {
+        raptor_free_memory(datatype_uri_string);
+        datatype_uri_string = NULL;
+    }
+    return value;
+  }
+
+  std::string objectLanguage() const {
+    return std::string(reinterpret_cast<char*>(statement_->object->value.literal.language), 
+                                               statement_->object->value.literal.language_len);
+  }
+
+  bool objectHasDatatype() const {
+    return (statement_->object->type == RAPTOR_TERM_TYPE_LITERAL &&
+            statement_->object->value.literal.datatype);
+
+  }
+
+  bool objectHasLanguageTag() const {
+    return (statement_->object->type == RAPTOR_TERM_TYPE_LITERAL &&
+            statement_->object->value.literal.language);
+
+  }
+
+  std::string toString() const;
+private:
+  static std::string kURISymbol;
+  static std::string kBNodeSymbol;
+  static std::string kLiteralSymbol;
+  static std::string kTypedLiteralSymbol;
+  static std::string kDTypeSymbol;
+  static std::string kLangSymbol;
+  raptor_statement* statement_;
+};

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Norman Heino <norman.heino@gmail.com>
+ * Copyright 2010–2013 Norman Heino <norman.heino@gmail.com>
  * 
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,329 +14,172 @@
  *    limitations under the License.
  */
 
-#include <cstdio>
-#include <cstdlib>
-
+#include <string>
 #include <raptor.h>
+#include <cstdlib> // malloc
 
-#include "statics.h"
 #include "statement.h"
 
-Handle<ObjectTemplate> Statement::template_;
+std::string Statement::kURISymbol          = "uri";
+std::string Statement::kBNodeSymbol        = "bnode";
+std::string Statement::kLiteralSymbol      = "literal";
+std::string Statement::kTypedLiteralSymbol = "typed-literal";
+std::string Statement::kDTypeSymbol        = "dtype";
+std::string Statement::kLangSymbol         = "lang";
 
-Handle<Object> Statement::NewInstance() {
-    HandleScope scope;
-
-    if (template_.IsEmpty()) {
-        Handle<FunctionTemplate> f = FunctionTemplate::New();
-        Handle<ObjectTemplate> proto = f->PrototypeTemplate();
-        proto->Set(tostring_symbol, FunctionTemplate::New(ToString));
-        
-        // Handle<ObjectTemplate> t = ObjectTemplate::New();
-        Handle<ObjectTemplate> t = f->InstanceTemplate();
-        t->SetInternalFieldCount(1);
-        t->SetAccessor(subject_symbol, SubjectAccessor);
-        t->SetAccessor(pred_symbol, PredicateAccessor);
-        t->SetAccessor(object_symbol, ObjectAccessor);
-
-        template_ = Persistent<ObjectTemplate>::New(t);
-    }
-    
-    Handle<Object> i = template_->NewInstance();
-
-    return scope.Close(i);
+Statement::Statement(raptor_statement* statement)
+{
+  statement_ = raptor_statement_copy(statement);
 }
 
-Handle<Value> Statement::ToString(const Arguments& args) {
-    HandleScope scope;
-    
-    // get raptor_statement out of info
-    Handle<External> field = Handle<External>::Cast(args.Holder()->GetInternalField(0));
-    raptor_statement* statement = static_cast<raptor_statement*>(field->Value());
-    
-    raptor_iostream* iostream;
-    void* statement_string = NULL;
-    size_t statement_string_len;
-    iostream = raptor_new_iostream_to_string(statement->world, 
-                                             &statement_string, 
-                                             &statement_string_len, 
-                                             malloc);
-    if (!iostream) {
-        return ThrowException(Exception::Error(
-            String::New("Error serializing statement.")));
-    }
-    
-    int ret_val;
-    ret_val = raptor_statement_ntriples_write(statement, iostream, 0);
-    raptor_free_iostream(iostream);
-    
-    if (ret_val > 0) {
-        if (statement_string) {
-            free(statement_string);
-            statement_string = NULL;
-        }
-        // error
-        return Undefined();
-    }
-    
-    Handle<String> result;
-    if (statement_string) {
-        result = String::New(reinterpret_cast<char*>(statement_string), 
-                             statement_string_len - 1 /* remove trailing newline */);
-        free(statement_string);
-        statement_string = NULL;
-    }
-    
-    return scope.Close(result);
+Statement::Statement(Statement&& other)
+{
+  statement_ = other.statement_;
+  other.statement_ = nullptr;
 }
 
-Handle<Value> Statement::SubjectAccessor(Local<String> property, const AccessorInfo& info) {
-    HandleScope scope;
-    
-    Handle<Object> result = Object::New();
-    
-    // get raptor_statement out of info
-    Handle<External> field = Handle<External>::Cast(info.Holder()->GetInternalField(0));
-    raptor_statement* statement = static_cast<raptor_statement*>(field->Value());
-    
-    // get value out of statement
-    raptor_term_value* subject_term = &statement->subject->value;
-    
-    Handle<String> type;
-    Handle<String> value;
-    
-    raptor_uri* uri_value;
-    raptor_term_blank_value* blank_value;
-    
-    if (statement->subject->type == RAPTOR_TERM_TYPE_URI) {
-        uri_value = subject_term->uri;
-        value = String::New(reinterpret_cast<char*>(raptor_uri_as_string(uri_value)));
-        type = uri_symbol;
-    } else if (statement->subject->type == RAPTOR_TERM_TYPE_BLANK) {
-        blank_value = &subject_term->blank;
-        value = String::New(reinterpret_cast<char*>(blank_value->string), 
-                                                    blank_value->string_len);
-        type = bnode_symbol;
-    }
-    
-    result->Set(type_symbol, type);
-    result->Set(value_symbol, value);
-    
-    return scope.Close(result);
+Statement::~Statement()
+{
+  raptor_free_statement(statement_);
 }
 
-Handle<Value> Statement::PredicateAccessor(Local<String> property, const AccessorInfo& info) {
-    HandleScope scope;
-    
-    Handle<Object> result = Object::New();
-    
-    // get raptor_statement out of info
-    Handle<External> field = Handle<External>::Cast(info.Holder()->GetInternalField(0));
-    raptor_statement* statement = static_cast<raptor_statement*>(field->Value());
-    
-    // get value out of statement
-    raptor_term_value* predicate_term = &statement->predicate->value;
-    raptor_uri* uri_value = predicate_term->uri;
-    Handle<String> value = String::New(reinterpret_cast<char*>(raptor_uri_as_string(uri_value)));
-    
-    result->Set(type_symbol, uri_symbol);
-    result->Set(value_symbol, value);
-    
-    return scope.Close(result);
+bool Statement::operator==(Statement const& other)
+{
+  if (raptor_statement_equals(statement_, other.statement_)) {
+    return true;
+  }
+  return false;
 }
 
-Handle<Value> Statement::ObjectAccessor(Local<String> property, const AccessorInfo& info) {
-    HandleScope scope;
-    
-    Handle<Object> result = Object::New();
-    
-    // get raptor_statement out of info
-    Handle<External> field = Handle<External>::Cast(info.Holder()->GetInternalField(0));
-    raptor_statement* statement = static_cast<raptor_statement*>(field->Value());
-    
-    // get value out of statement
-    raptor_term_value* object_term = &statement->object->value;
-    
-    Handle<String> type;
-    Handle<String> value;
-    
-    raptor_uri* uri_value;
-    raptor_term_literal_value* literal_value;
-    raptor_term_blank_value* blank_value;
-    
-    switch (statement->object->type) {
-    case RAPTOR_TERM_TYPE_URI:
-        uri_value = object_term->uri;
-        value = String::New(reinterpret_cast<char*>(raptor_uri_as_string(uri_value)));
-        type = uri_symbol;
-        break;
-    case RAPTOR_TERM_TYPE_LITERAL:
-        literal_value = &object_term->literal;
-        value = String::New(reinterpret_cast<char*>(literal_value->string), 
-                            literal_value->string_len);
-        type = literal_symbol;
-        
-        if (literal_value->datatype) {
-            raptor_uri* datatype_uri = literal_value->datatype;
-            unsigned char* datatype_uri_string = raptor_uri_to_string(datatype_uri);
-            result->Set(dtype_symbol, String::New(reinterpret_cast<char*>(datatype_uri_string)));
-            if (datatype_uri_string) {
-                raptor_free_memory(datatype_uri_string);
-                datatype_uri_string = NULL;
-            }
-            
-            
-            type = tliteral_symbol;
-        } else if (literal_value->language) {
-            result->Set(lang_symbol, String::New(reinterpret_cast<char*>(literal_value->language), 
-                                                 literal_value->language_len));
-        }
-        break;
-    case RAPTOR_TERM_TYPE_BLANK:
-        blank_value = &object_term->blank;
-        value = String::New(reinterpret_cast<char*>(blank_value->string), 
-                                                    blank_value->string_len);
-        type = bnode_symbol;
-        break;
-    }
-    
-    result->Set(type_symbol, type);
-    result->Set(value_symbol, value);
-    
-    return scope.Close(result);
+Statement& Statement::operator=(Statement&& other)
+{
+  statement_ = other.statement_;
+  other.statement_ = nullptr;
+  return *this;
 }
 
-raptor_statement* Statement::ConvertObjectToRaptorStatement(Handle<Object> obj) {
-    HandleScope scope;
+std::string Statement::toString() const
+{
+  void* statementString = NULL;
+  std::size_t statementStringLength;
+  raptor_iostream* iostream = raptor_new_iostream_to_string(statement_->world,
+                                                            &statementString,
+                                                            &statementStringLength,
+                                                            malloc);
+  if (!iostream) {
+    throw std::runtime_error("could not create raptor iostream statement");
+  }
     
-    Handle<Object> subject = obj->Get(subject_symbol)->ToObject();
-    Handle<String> subject_type = subject->Get(type_symbol)->ToString();
-    Handle<String> subject_value = subject->Get(value_symbol)->ToString();
-    String::Utf8Value subject_string(subject_value);
+  int error = raptor_statement_ntriples_write(statement_, iostream, 0);
+  raptor_free_iostream(iostream);
     
-    raptor_term* subject_term;
-    if (subject_type->Equals(uri_symbol)) {
-        // have URI
-        raptor_uri* uri = raptor_new_uri_from_counted_string(world, 
-                                                             reinterpret_cast<unsigned char*>(*subject_string), 
-                                                             subject_value->Length());
-        if (uri) {
-            subject_term = raptor_new_term_from_uri(world, uri);
-            raptor_free_uri(uri);
-        }
-    } else if (subject_type->Equals(bnode_symbol)) {
-        // have bnode
-        subject_term = raptor_new_term_from_counted_blank(world, 
-                                                          reinterpret_cast<unsigned char*>(*subject_string), 
-                                                          subject_value->Length());
-    } else {
-        // error
+  if (error) {
+    if (statementString) {
+        free(statementString);
+        statementString = NULL;
     }
+    throw std::runtime_error("could not serialize statement");
+  }
     
-    Handle<Object> predicate = obj->Get(pred_symbol)->ToObject();
-    Handle<String> predicate_type = predicate->Get(type_symbol)->ToString();
-    Handle<String> predicate_value = predicate->Get(value_symbol)->ToString();
-    String::Utf8Value predicate_string(predicate_value);
+  std::string result;
+  if (statementString) {
+      result.append(static_cast<char*>(statementString),
+                    statementStringLength - 1 /* do not copy trailing line break */);
+      free(statementString);
+      statementString = NULL;
+  }
+  return result;
+}
+
+std::string Statement::subjectType() const
+{
+  if (statement_->subject->type == RAPTOR_TERM_TYPE_URI) {
+    return kURISymbol;
+  } else if (statement_->subject->type == RAPTOR_TERM_TYPE_BLANK) {
+    return kBNodeSymbol;
+  }
+  return "unknown";
+}
+
+std::string Statement::subjectValue() const
+{
+  raptor_term_value* subject_term = &statement_->subject->value;
+  raptor_uri* uri_value;
+  raptor_term_blank_value* blank_value;
     
-    raptor_term* predicate_term;
-    if (predicate_type->Equals(uri_symbol)) {
-        // have URI
-        raptor_uri* uri = raptor_new_uri_from_counted_string(world, 
-                                                             reinterpret_cast<unsigned char*>(*predicate_string), 
-                                                             predicate_value->Length());
-        if (uri) {
-            predicate_term = raptor_new_term_from_uri(world, uri);
-            raptor_free_uri(uri);
-        }
-    } else {
-        // error
+  std::string value;
+  if (statement_->subject->type == RAPTOR_TERM_TYPE_URI) {
+      uri_value = subject_term->uri;
+      value.append(reinterpret_cast<char*>(raptor_uri_as_string(uri_value)));
+  } else if (statement_->subject->type == RAPTOR_TERM_TYPE_BLANK) {
+      blank_value = &subject_term->blank;
+      value.append(reinterpret_cast<char*>(blank_value->string), blank_value->string_len);
+  }
+
+  return value;
+}
+
+std::string Statement::predicateType() const
+{
+  return kURISymbol;
+}
+
+std::string Statement::predicateValue() const
+{
+  raptor_term_value* predicate_term = &statement_->predicate->value;
+  return std::string(reinterpret_cast<char*>(raptor_uri_as_string(predicate_term->uri)));
+}
+
+std::string Statement::objectType() const
+{
+  switch (statement_->object->type) {
+  case RAPTOR_TERM_TYPE_URI:
+    return kURISymbol;
+    break;
+  case RAPTOR_TERM_TYPE_LITERAL:
+    if (statement_->object->value.literal.datatype) {
+      return kTypedLiteralSymbol;
     }
-    
-    Handle<Object> object = obj->Get(object_symbol)->ToObject();
-    Handle<String> object_type = object->Get(type_symbol)->ToString();
-    Handle<String> object_value = object->Get(value_symbol)->ToString();
-    String::Utf8Value object_string(object_value);
-    
-    raptor_term* object_term;
-    if (object_type->Equals(uri_symbol)) {
-        // have URI
-        raptor_uri* uri = raptor_new_uri_from_counted_string(world, 
-                                                             reinterpret_cast<unsigned char*>(*object_string), 
-                                                             object_value->Length());
-        if (uri) {
-            object_term = raptor_new_term_from_uri(world, uri);
-            raptor_free_uri(uri);
-        }
-    } else if (object_type->Equals(bnode_symbol)) {
-        // have bnode
-        object_term = raptor_new_term_from_counted_blank(world, 
-                                                         reinterpret_cast<unsigned char*>(*object_string), 
-                                                         object_value->Length());
-    } else if (object_type->Equals(literal_symbol)) {
-        // literal
-        Handle<String> object_language;
-        if (object->Has(lang_symbol)) {
-            object_language = object->Get(lang_symbol)->ToString();
-            String::Utf8Value lang_string(object_language);
-            
-            // if (!object_language.IsEmpty()) {
-                object_term = raptor_new_term_from_counted_literal(world, 
-                                                                   reinterpret_cast<unsigned char*>(*object_string), 
-                                                                   object_value->Length(), 
-                                                                   NULL, 
-                                                                   reinterpret_cast<unsigned char*>(*lang_string), 
-                                                                   object_language->Length());
-            // }
-        } else {
-            object_term = raptor_new_term_from_counted_literal(world, 
-                                                               reinterpret_cast<unsigned char*>(*object_string), 
-                                                               object_value->Length(), 
-                                                               NULL, 
-                                                               NULL, 
-                                                               0);
-        }
-    } else if (object_type->Equals(tliteral_symbol)) {
-        // typed literal
-        Handle<String> object_datatype;
-        if (object->Has(dtype_symbol)) {
-            object_datatype = object->Get(dtype_symbol)->ToString();
-            String::Utf8Value dtype_string(object_datatype);
-            
-            raptor_uri* dtype_uri = raptor_new_uri_from_counted_string(world, 
-                                                                       reinterpret_cast<unsigned char*>(*dtype_string), 
-                                                                       object_datatype->Length());
-            
-           if (dtype_uri) {
-               object_term = raptor_new_term_from_counted_literal(world, 
-                                                                  reinterpret_cast<unsigned char*>(*object_string), 
-                                                                  object_value->Length(), 
-                                                                  dtype_uri, 
-                                                                  NULL, 
-                                                                  NULL);
-               raptor_free_uri(dtype_uri);
-           } else {
-               // error
-           }
-        }
-    } else {
-        // error
-        return NULL;
-    }
-    
-    raptor_statement* statement;
-    if (subject_term && predicate_term && object_term) {
-        raptor_statement* result = raptor_new_statement_from_nodes(world, 
-                                               subject_term, 
-                                               predicate_term, 
-                                               object_term, 
-                                               NULL);
-        
-        // raptor_free_term(subject_term);
-        // raptor_free_term(predicate_term);
-        // raptor_free_term(object_term);
-        
-        return result;
-    }
-    
-    return NULL;
+    return kLiteralSymbol;
+    break;
+  case RAPTOR_TERM_TYPE_BLANK:
+    return kBNodeSymbol;
+    break;
+  case RAPTOR_TERM_TYPE_UNKNOWN:
+  default:
+    return "unknown";
+  }
+}
+
+std::string Statement::objectValue() const
+{
+  raptor_term_value* object_term = &statement_->object->value;
+  raptor_uri* uri_value;
+  raptor_term_literal_value* literal_value;
+  raptor_term_blank_value* blank_value;
+  
+  std::string value;
+
+  switch (statement_->object->type) {
+  case RAPTOR_TERM_TYPE_URI:
+    uri_value = object_term->uri;
+    value.append(reinterpret_cast<char*>(raptor_uri_as_string(uri_value)));
+    break;
+  case RAPTOR_TERM_TYPE_LITERAL:
+    literal_value = &object_term->literal;
+    value.append(reinterpret_cast<char*>(literal_value->string), 
+                                          literal_value->string_len);
+    break;
+  case RAPTOR_TERM_TYPE_BLANK:
+    blank_value = &object_term->blank;
+    value.append(reinterpret_cast<char*>(blank_value->string), 
+                                          blank_value->string_len);
+    break;
+  case RAPTOR_TERM_TYPE_UNKNOWN:
+  default:
+    // do nothing
+    break;
+  }
+
+  return value;
 }

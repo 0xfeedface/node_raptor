@@ -14,14 +14,23 @@
  *    limitations under the License.
  */
 
-#include <v8.h>
-#include <node.h>
+#pragma once
 
-#include "parser_wrapper.h"
+#include <raptor.h>
 
-// Node module initializer
-void InitModule(v8::Handle<v8::Object> exports) {
-  ParserWrapper::Initialize(exports);
-}
+typedef unsigned char raptor_byte_t;
 
-NODE_MODULE(bindings, InitModule)
+class World
+{
+public:
+  static World& sharedWorld();
+  static bool isParserName(std::string const& candidate);
+  static raptor_world* raptorWorld();
+
+  World(World const&) = delete;
+  void operator=(World const&) = delete;
+  ~World();
+private:
+  World();
+  raptor_world* world_;
+};

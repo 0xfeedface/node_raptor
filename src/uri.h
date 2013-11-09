@@ -14,14 +14,22 @@
  *    limitations under the License.
  */
 
-#include <v8.h>
-#include <node.h>
+#pragma once
 
-#include "parser_wrapper.h"
+#include <string>
+#include <raptor.h>
+#include "world.h"
 
-// Node module initializer
-void InitModule(v8::Handle<v8::Object> exports) {
-  ParserWrapper::Initialize(exports);
-}
-
-NODE_MODULE(bindings, InitModule)
+class URI
+{
+public:
+  explicit URI(std::string const& s)
+    : uri_(raptor_new_uri(World::raptorWorld(), reinterpret_cast<const raptor_byte_t*>(s.c_str()))) {}
+  explicit URI(raptor_uri const* uri)
+    : uri_(raptor_uri_copy(const_cast<raptor_uri*>(uri))) {}
+  ~URI() { raptor_free_uri(uri_); }
+  raptor_uri* raptorURI() { return uri_; }
+  operator std::string() const;
+private:
+  raptor_uri* uri_;
+};

@@ -14,14 +14,23 @@
  *    limitations under the License.
  */
 
-#include <v8.h>
-#include <node.h>
+#pragma once
 
-#include "parser_wrapper.h"
+#include <raptor.h>
+#include "uri.h"
 
-// Node module initializer
-void InitModule(v8::Handle<v8::Object> exports) {
-  ParserWrapper::Initialize(exports);
-}
-
-NODE_MODULE(bindings, InitModule)
+class Namespace {
+public:
+  explicit Namespace(raptor_namespace const* ns)
+    : URI_(raptor_namespace_get_uri(ns)),
+      prefix_(reinterpret_cast<const char*>(raptor_namespace_get_prefix(ns))) {}
+  std::string URI() const {
+    return URI_;
+  }
+  std::string const& prefix() const {
+    return prefix_;
+  }
+private:
+  class URI URI_;
+  std::string prefix_;
+};

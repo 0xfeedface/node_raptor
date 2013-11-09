@@ -1,37 +1,64 @@
-var events = require('events'),
-    util = require('util'),
-    bindings = require(__dirname + '/build/Release/bindings');
+var stream   = require('stream'),
+    bindings;
 
-function inherits(target, source) {
-    for (var key in source.prototype) {
-        target[key] = source.prototype[key];
-    }
-}
+bindings = require(__dirname + '/build/Release/bindings');
+// bindings = require(__dirname + '/build/Debug/bindings');
 
-exports.newParser = function (mimeType, cb) {
-    if (undefined === cb) {
-        var parser = bindings.newParser(mimeType);
-        inherits(parser, events.EventEmitter);
-        return parser;
-    } else {
-        var res = bindings.newParser(mimeType, function (parser) {
-            inherits(parser, events.EventEmitter);
-            cb(parser);
-        });
-    }
+exports.createParser = function (syntax) {
+    syntax = syntax || 'guess';
+    var parser = new bindings.Parser(syntax);
+    return new StreamParser(parser);
 };
 
+function StreamParser(parser) {
+    stream.Transform.call(this);
+    this._parser  = parser;
+    this._started = false;
 
-exports.newSerializer = function (mimeType) {
-    var serializer = null;
+    var self = this;
+    this._parser.setStatementHandler(function (statement) {
+        self.emit('statement', statement);
+    });
+    this._parser.setNamespaceHandler(function (namespaceURI, prefix) {
+        self.emit('namespace', namespaceURI, prefix);
+    });
+    this._parser.setMessageHandler(function (type, message) {
+        self.emit('message', {
+            type: type,
+            text: message
+        });
+    });
+}
 
-    if (undefined === mimeType) {
-        serializer = bindings.newSerializer();
-    } else {
-        serializer = bindings.newSerializer(mimeType);
+StreamParser.prototype = Object.create(stream.Transform.prototype);
+
+StreamParser.prototype.setBaseURI = function (baseURI) {
+    this._baseURI = baseURI;
+    return this;
+};
+
+StreamParser.prototype._transform = function (chunk, encoding, cb) {
+    try {
+        if (!this._started) {
+            if (!this._baseURI) {
+                throw RangeError('base URI not set');
+            }
+            this._parser.parseStart(this._baseURI);
+            this._started = true;
+        }
+        this._parser.parseBuffer(chunk);
+    } catch (e) {
+        this.emit('error', e);
     }
+    cb();
+};
 
-    inherits(serializer, events.EventEmitter);
-
-    return serializer;
+StreamParser.prototype._flush = function (cb) {
+    try {
+        this._parser.parseEnd();
+    } catch (e) {
+        this.emit('error', e);
+    }
+    this.emit('end');
+    cb();
 };

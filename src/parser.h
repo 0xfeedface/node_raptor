@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Norman Heino <norman.heino@gmail.com>
+ * Copyright 2010–2013 Norman Heino <norman.heino@gmail.com>
  * 
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,65 +14,71 @@
  *    limitations under the License.
  */
 
-#ifndef NODE_RAPTOR_PARSER_H_
-#define NODE_RAPTOR_PARSER_H_
+#pragma once
 
-#include <node.h>
-#include <node_object_wrap.h>
-//#include <node_events.h>
+#include <string>
+#include <functional>
+
 #include <raptor.h>
-
-#include "statics.h"
-
-enum parser_state {
-    PARSER_STATE_INIT = 0, 
-    PARSER_STATE_STARTED, 
-    PARSER_STATE_PARSING, 
-};
-
-using namespace v8;
-using namespace node;
-
-//class Parser : public EventEmitter {
-class Parser : public ObjectWrap {
-public:
-    static Handle<Value> Initialize(const Arguments& args);
-    static Handle<Value> New(const Arguments& args);
-    
-    static Handle<Value> ParseFile(const Arguments& args);
-    static Handle<Value> ParseURI(const Arguments& args);
-    static Handle<Value> ParseStart(const Arguments& args);
-    static Handle<Value> ParseBuffer(const Arguments& args);
-    
-    static Handle<Value> Abort(const Arguments& args);
-    static Handle<Value> SetOption(const Arguments& args);
-    static Handle<Value> GetName (Local<String> property, const AccessorInfo& info);
-    static void CallbackWrapper(void* user_data, raptor_statement* statement);
-    static void CallbackWrapper(void* user_data, raptor_namespace *nspace);
-    static void CallbackWrapper(void *user_data, raptor_log_message* message);
-    Parser(const char* name);
-    ~Parser();
-protected:
-
-    void Abort();
-    
-    void ParseFile(const char* filename, const char* base);
-    void ParseURI(const char* uri, const char* base);
-    
-    void ParseStart(const char* base);
-    void ParseBuffer(const char* buffer, size_t buffer_length, bool end);
-    
-    static Handle<Value>* ExtractArguments(const Arguments& args, Handle<Value>* arguments);
-    const char* GetName();
-    void SetOption(const char* option_name, const char* string_option_value);
-    void SetOption(const char* option_name, const char* string_option_value, bool bool_option_value);
-    void StatementHandler(raptor_statement* statement);
-    void NamespaceHandler(raptor_namespace *nspace);
-    void LogMessageHandler(raptor_log_message* message);
-    
-    raptor_parser* parser_;
-    char* syntax_name_;
-    parser_state state_;
-};
-
+#if (RAPTOR_VERSION_MAJOR < 2)
+#error "Raptor library version 2 or greater required"
 #endif
+
+#include "world.h"
+#include "statement.h"
+#include "namespace.h"
+#include "message.h"
+
+class Parser
+{
+public:
+  typedef std::function<void(Statement&&)> statement_handler_t;
+  typedef std::function<void(Namespace const&)> namespace_handler_t;
+  typedef std::function<void(Message const&)> message_handler_t;
+
+  Parser(std::string const& syntaxName);
+  Parser(Parser const&) = delete;
+  ~Parser();
+
+  void setStatementHandler(statement_handler_t const&);
+  void setNamespaceHandler(namespace_handler_t const&);
+  void setMessageHandler(message_handler_t const&);
+
+  void parseStart(std::string const&);
+  void parseBuffer(raptor_byte_t const*, std::size_t);
+  void parseEnd();
+
+  static void StatementCallback(void* data, raptor_statement* statement) {
+    Parser* parser(static_cast<Parser*>(data));
+    if (parser->statementHandler_) {
+      parser->statementHandler_(Statement(statement));
+    }
+  }
+  static void NamespaceCallback(void* data, raptor_namespace* nspace) {
+    Parser* parser(static_cast<Parser*>(data));
+    if (parser->namespaceHandler_) {
+      parser->namespaceHandler_(Namespace(nspace));
+    }
+  }
+  static void MessageCallback(void* data, raptor_log_message* message) {
+    Parser* parser(static_cast<Parser*>(data));
+    if (parser->messageHandler_) {
+      parser->messageHandler_(Message(message));
+    }
+  }
+
+private:
+  enum class ParserState : unsigned {
+    Init = 0,
+    Parsing
+  };
+
+  std::string syntaxName_;
+  statement_handler_t statementHandler_ = nullptr;
+  namespace_handler_t namespaceHandler_ = nullptr;
+  message_handler_t messageHandler_ = nullptr;
+  ParserState state_;
+
+  std::string baseURI_;
+  raptor_parser* parser_;
+};

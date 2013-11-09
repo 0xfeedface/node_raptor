@@ -14,14 +14,37 @@
  *    limitations under the License.
  */
 
-#include <v8.h>
-#include <node.h>
+#include <string>
 
-#include "parser_wrapper.h"
+#include "world.h"
 
-// Node module initializer
-void InitModule(v8::Handle<v8::Object> exports) {
-  ParserWrapper::Initialize(exports);
+World& World::sharedWorld()
+{
+  static World instance_;
+  return instance_;
 }
 
-NODE_MODULE(bindings, InitModule)
+raptor_world* World::raptorWorld()
+{
+  return sharedWorld().world_;
+}
+
+bool World::isParserName(std::string const& candidate)
+{
+  if (raptor_world_is_parser_name(World::raptorWorld(), candidate.c_str())) {
+    return true;
+  }
+
+  return false;
+}
+
+World::World()
+{
+  world_ = raptor_new_world();
+  raptor_world_open(world_);
+}
+
+World::~World()
+{
+  raptor_free_world(world_);
+}
