@@ -15,7 +15,7 @@
  */
 
 /*
- * This example demonstrates usage of the new streams2-based API.
+ * This example demonstrates usage of the new Streams2-based API.
  * You can simply pipe a ReadStream into the parser and attach to 
  * the `statement` event.
  * Keep in mind that this is a minimal example with no error handling.

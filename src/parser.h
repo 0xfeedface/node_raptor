@@ -37,8 +37,10 @@ public:
   typedef std::function<void(Message const&)> message_handler_t;
 
   Parser(std::string const& syntaxName);
-  Parser(Parser const&) = delete;
   ~Parser();
+
+  Parser(Parser const&) = delete;
+  Parser& operator=(Parser const&) = delete;
 
   void setStatementHandler(statement_handler_t const&);
   void setNamespaceHandler(namespace_handler_t const&);

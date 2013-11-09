@@ -60,8 +60,7 @@ void Parser::parseStart(std::string const& baseURI)
   if (state_ != ParserState::Init) {
     throw std::runtime_error("parsing already started");
   }
-  URI base(baseURI);
-  raptor_parser_parse_start(parser_, base.raptorURI());
+  raptor_parser_parse_start(parser_, URI(baseURI));
   state_ = ParserState::Parsing;
 }
 

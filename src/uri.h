@@ -28,7 +28,7 @@ public:
   explicit URI(raptor_uri const* uri)
     : uri_(raptor_uri_copy(const_cast<raptor_uri*>(uri))) {}
   ~URI() { raptor_free_uri(uri_); }
-  raptor_uri* raptorURI() { return uri_; }
+  operator raptor_uri*() { return uri_; }
   operator std::string() const;
 private:
   raptor_uri* uri_;
