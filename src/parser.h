@@ -47,7 +47,7 @@ public:
   void setMessageHandler(message_handler_t const&);
 
   void parseStart(std::string const&);
-  void parseBuffer(raptor_byte_t const*, std::size_t);
+  void parseBuffer(byte_t const*, std::size_t);
   void parseEnd();
 
   static void StatementCallback(void* data, raptor_statement* statement) {

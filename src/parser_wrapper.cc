@@ -147,7 +147,7 @@ v8::Handle<v8::Value> ParserWrapper::ParseBuffer(v8::Arguments const& args)
   }
 
   v8::Local<v8::Object> buffer = bufferHandle->ToObject();
-  raptor_byte_t* bufferData = reinterpret_cast<raptor_byte_t*>(node::Buffer::Data(buffer));
+  byte_t* bufferData = reinterpret_cast<byte_t*>(node::Buffer::Data(buffer));
   size_t bufferLength = node::Buffer::Length(buffer);
 
   ParserWrapper* parserWrapper = Unwrap<ParserWrapper>(args.This());

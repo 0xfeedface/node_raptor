@@ -19,7 +19,7 @@
 URI::operator std::string() const
 {
   std::size_t length;
-  raptor_byte_t* uriString = raptor_uri_to_counted_string(uri_, &length);
+  byte_t* uriString = raptor_uri_to_counted_string(uri_, &length);
   std::string result(reinterpret_cast<char const*>(uriString), length);
   raptor_free_memory(uriString);
   return result;

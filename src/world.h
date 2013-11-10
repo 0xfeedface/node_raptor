@@ -18,7 +18,7 @@
 
 #include <raptor.h>
 
-typedef unsigned char raptor_byte_t;
+typedef unsigned char byte_t;
 
 class World
 {

@@ -64,7 +64,7 @@ void Parser::parseStart(std::string const& baseURI)
   state_ = ParserState::Parsing;
 }
 
-void Parser::parseBuffer(raptor_byte_t const* chunk, std::size_t chunkSize)
+void Parser::parseBuffer(byte_t const* chunk, std::size_t chunkSize)
 {
   if (state_ != ParserState::Parsing) {
     throw std::runtime_error("parsing not started or not yet ended");
