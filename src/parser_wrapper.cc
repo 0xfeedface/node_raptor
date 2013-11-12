@@ -148,7 +148,7 @@ v8::Handle<v8::Value> ParserWrapper::ParseBuffer(v8::Arguments const& args)
 
   v8::Local<v8::Object> buffer = bufferHandle->ToObject();
   byte_t* bufferData = reinterpret_cast<byte_t*>(node::Buffer::Data(buffer));
-  size_t bufferLength = node::Buffer::Length(buffer);
+  std::size_t bufferLength = node::Buffer::Length(buffer);
 
   ParserWrapper* parserWrapper = Unwrap<ParserWrapper>(args.This());
 
@@ -202,8 +202,9 @@ ParserWrapper::ParserWrapper(v8::Handle<v8::Value> syntaxName)
     if (!namespaceHandler_.IsEmpty()) {
       v8::HandleScope scope;
       const unsigned argc = 2;
+      std::string namespaceURI(nspace.URI());
       v8::Local<v8::Value> argv[argc] {
-        v8::Local<v8::Value>::New(v8::String::New(nspace.URI().data(), nspace.URI().length())),
+        v8::Local<v8::Value>::New(v8::String::New(namespaceURI.data(), namespaceURI.length())),
         v8::Local<v8::Value>::New(v8::String::New(nspace.prefix().data(), nspace.prefix().length()))
       };
 

@@ -10,6 +10,8 @@
         "src/bindings.cc",
         "src/parser.cc",
         "src/parser_wrapper.cc",
+        "src/serializer.cc",
+        "src/serializer_wrapper.cc",
         "src/statement.cc",
         "src/statement_wrapper.cc",
         "src/uri.cc",

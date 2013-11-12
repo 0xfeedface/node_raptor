@@ -16,12 +16,13 @@
 
 #include <v8.h>
 #include <node.h>
-
 #include "parser_wrapper.h"
+#include "serializer_wrapper.h"
 
 // Node module initializer
 void InitModule(v8::Handle<v8::Object> exports) {
   ParserWrapper::Initialize(exports);
+  SerializerWrapper::Initialize(exports);
 }
 
 NODE_MODULE(bindings, InitModule)

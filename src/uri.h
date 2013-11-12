@@ -23,14 +23,22 @@
 class URI
 {
 public:
+  explicit URI(byte_t const* s)
+    : uri_(raptor_new_uri(World::raptorWorld(), s)) {}
+  explicit URI(byte_t const* s, std::size_t length)
+    : uri_(raptor_new_uri_from_counted_string(World::raptorWorld(), s, length)) {}
+  explicit URI(char const* s)
+    : uri_(raptor_new_uri(World::raptorWorld(), reinterpret_cast<byte_t const*>(s))) {}
+  explicit URI(char const* s, std::size_t length)
+    : uri_(raptor_new_uri_from_counted_string(World::raptorWorld(), reinterpret_cast<byte_t const*>(s), length)) {}
   explicit URI(std::string const& s)
-    : uri_(raptor_new_uri(World::raptorWorld(), reinterpret_cast<const raptor_byte_t*>(s.c_str()))) {}
+    : URI(reinterpret_cast<byte_t const*>(s.c_str())) {}
   explicit URI(raptor_uri const* uri)
     : uri_(raptor_uri_copy(const_cast<raptor_uri*>(uri))) {}
   ~URI() { raptor_free_uri(uri_); }
-  operator raptor_uri*() { return uri_; }
-  operator raptor_uri const*() const { return uri_; }
+  operator raptor_uri*() const { return uri_; }
   operator std::string() const;
 private:
-  raptor_uri* uri_;
+  // Adapt to raptor's bitwise const
+  mutable raptor_uri* uri_;
 };

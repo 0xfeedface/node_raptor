@@ -17,28 +17,26 @@
 #pragma once
 
 #include <node.h>
-#include "parser.h"
+#include "serializer.h"
 
-class ParserWrapper : node::ObjectWrap
+class SerializerWrapper : node::ObjectWrap
 {
 public:
   static void Initialize(v8::Handle<v8::Object>&);
   static v8::Handle<v8::Value> New(v8::Arguments const&);
 
-  static v8::Handle<v8::Value> ParseStart(v8::Arguments const&);
-  static v8::Handle<v8::Value> ParseBuffer(v8::Arguments const&);
-  static v8::Handle<v8::Value> ParseEnd(v8::Arguments const&);
+  static v8::Handle<v8::Value> SetDataHandler(v8::Arguments const&);
+  static v8::Handle<v8::Value> SetEndHandler(v8::Arguments const&);
 
-  static v8::Handle<v8::Value> SetStatementHandler(v8::Arguments const&);
-  static v8::Handle<v8::Value> SetNamespaceHandler(v8::Arguments const&);
-  static v8::Handle<v8::Value> SetMessageHandler(v8::Arguments const&);
+  static v8::Handle<v8::Value> SerializeStart(v8::Arguments const&);
+  static v8::Handle<v8::Value> SerializeStatement(v8::Arguments const&);
+  static v8::Handle<v8::Value> SerializeEnd(v8::Arguments const&);
 
 private:
-  ParserWrapper(v8::Handle<v8::Value> syntaxName);
-  ~ParserWrapper();
+  SerializerWrapper(v8::Handle<v8::Value> syntaxName);
+  ~SerializerWrapper();
   static v8::Persistent<v8::Function> constructor;
-  Parser parser_;
-  v8::Persistent<v8::Function> statementHandler_;
-  v8::Persistent<v8::Function> namespaceHandler_;
-  v8::Persistent<v8::Function> messageHandler_;
+  Serializer serializer_;
+  v8::Persistent<v8::Function> dataHandler_;
+  v8::Persistent<v8::Function> endHandler_;
 };

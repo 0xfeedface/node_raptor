@@ -1,8 +1,6 @@
 var stream   = require('stream'),
-    bindings;
-
-bindings = require(__dirname + '/build/Release/bindings');
-// bindings = require(__dirname + '/build/Debug/bindings');
+    // bindings = require(__dirname + '/build/Debug/bindings');
+    bindings = require(__dirname + '/build/Release/bindings');
 
 exports.createParser = function (syntax) {
     syntax = syntax || 'guess';
@@ -11,13 +9,13 @@ exports.createParser = function (syntax) {
 };
 
 function StreamParser(parser) {
-    stream.Transform.call(this);
+    stream.Transform.call(this, { objectMode: true });
     this._parser  = parser;
     this._started = false;
 
     var self = this;
     this._parser.setStatementHandler(function (statement) {
-        self.emit('statement', statement);
+        self.emit('data', statement);
     });
     this._parser.setNamespaceHandler(function (namespaceURI, prefix) {
         self.emit('namespace', namespaceURI, prefix);
@@ -60,5 +58,61 @@ StreamParser.prototype._flush = function (cb) {
         this.emit('error', e);
     }
     this.emit('end');
+    cb();
+};
+
+exports.createSerializer = function (syntax) {
+    var serializer = new bindings.Serializer(syntax);
+    return new StreamSerializer(serializer);
+};
+
+function StreamSerializer(serializer) {
+    stream.Transform.call(this, { objectMode: true });
+
+    this._serializer = serializer;
+    this._started = false;
+
+    var self = this;
+    this._serializer.setDataHandler(function (data) {
+        self.push(data);
+    });
+    this._serializer.setEndHandler(function () {
+        self.push();
+    });
+}
+
+StreamSerializer.prototype = Object.create(stream.Transform.prototype);
+
+StreamSerializer.prototype.setBaseURI = function (baseURI) {
+    this._baseURI = baseURI;
+    return this;
+};
+
+StreamSerializer.prototype.serializeStatement = function (statement) {
+    if (!this._started) {
+        if (!this._baseURI) {
+            throw RangeError('base URI not set');
+        }
+        this._serializer.serializeStart(this._baseURI);
+        this._started = true;
+    }
+    this._serializer.serializeStatement(statement);
+    return this;
+};
+
+StreamSerializer.prototype.serializeEnd = function (statement) {
+    this._serializer.serializeEnd();
+    return this;
+};
+
+StreamSerializer.prototype._transform = function (chunk, encoding, cb) {
+    console.log('transform');
+    StreamSerializer.prototype.serializeStatement.call(this, chunk);
+    cb();
+};
+
+StreamSerializer.prototype._flush = function (cb) {
+    console.log('flush');
+    StreamSerializer.prototype.serializeEnd.call(this);
     cb();
 };

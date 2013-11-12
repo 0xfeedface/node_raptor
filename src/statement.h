@@ -26,6 +26,7 @@ public:
   ~Statement();
   bool operator==(Statement const&);
   Statement& operator=(Statement&&);
+  operator raptor_statement*() const { return statement_; }
 
   std::string subjectType() const;
   std::string subjectValue() const;
@@ -72,5 +73,9 @@ private:
   static std::string kTypedLiteralSymbol;
   static std::string kDTypeSymbol;
   static std::string kLangSymbol;
-  raptor_statement* statement_;
+
+  // Raptor being a C library uses bitwise const
+  // so statement_ must be mutable to allow bitwise
+  // (non-logical) changes.
+  mutable raptor_statement* statement_;
 };
