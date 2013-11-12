@@ -31,7 +31,7 @@ var fileName = path.join(__dirname, '..', 'test', 'phil.rdf'),
 
 parser
 .setBaseURI(fileName)
-.addListener('statement', function (statement) {
+.addListener('data', function (statement) {
     console.log(statement);
 });
 

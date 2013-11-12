@@ -57,7 +57,6 @@ StreamParser.prototype._flush = function (cb) {
     } catch (e) {
         this.emit('error', e);
     }
-    this.emit('end');
     cb();
 };
 
