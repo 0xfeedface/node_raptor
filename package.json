@@ -1,5 +1,5 @@
-{ "name": "raptor",
-  "version": "0.1.0-2",
+{ "name": "node_raptor",
+  "version": "0.5.0",
   "description": "Node bindings for libraptor2.",
   "keywords": ["rdf", "turtle", "rdfxml", "libraptor"],
   "author": {
