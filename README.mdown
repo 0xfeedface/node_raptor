@@ -42,9 +42,9 @@ There is a low-level API and a Streams2 interface.
 You are highly encourages to use the streaming interface.
 See `examples/stream.js` for a minimal stream-based example.
 
-The stream API allows you to pipe any Node readable stream (i.e. `fs.ReadStream`, `http.IncomingMessage`, ...) into a Raptor parser or a Raptor serializer output into any Node writable stream.
+The stream API allows you to pipe any Node readable stream (e.g. `fs.ReadStream`, `http.IncomingMessage`, ...) into a Raptor parser or a Raptor serializer output into any Node writable stream.
 
-Note that Node 0.10 or greate is required for that feature. If you are using an older Node version, chekc out the `pre-Node-0.10` branch.
+Note that Node 0.10 or greater is required for that feature. If you are using an older Node version, check out the `pre-Node-0.10` branch.
 
 Declaring base URIs
 -------------------
