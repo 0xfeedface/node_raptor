@@ -14,6 +14,8 @@
  *    limitations under the License.
  */
 
+#include <iostream>
+#include <string>
 #include <utility>
 #include "statement_wrapper.h"
 #include "uri.h"
@@ -158,13 +160,13 @@ Statement StatementWrapper::StatementWithObject(v8::Handle<v8::Object> const& ob
                                               predicateTerm,
                                               objectTerm,
                                               NULL);
+
+  Statement result(statement);
+  raptor_free_statement(statement);
   // FIXME:
   // raptor_free_term(subjectTerm);
   // raptor_free_term(predicateTerm);
   // raptor_free_term(objectTerm);
-
-  Statement result(statement);
-  raptor_free_statement(statement);
   return result;
 }
 
@@ -176,7 +178,7 @@ raptor_term* StatementWrapper::newSubjectTermWithObject(v8::Handle<v8::Object> c
   raptor_term* subjectTerm = nullptr;
   v8::String::Utf8Value subjectString(subjectValue);
   if (subjectType->Equals(kURISymbol)) {
-    URI subjectURI(*subjectString, subjectValue->Length());
+    URI subjectURI(*subjectString, subjectValue->Utf8Length());
     subjectTerm = raptor_new_term_from_uri(World::raptorWorld(), subjectURI);
   } else if (subjectType->Equals(kBNodeSymbol)) {
     subjectTerm = raptor_new_term_from_counted_blank(World::raptorWorld(),
@@ -194,7 +196,7 @@ raptor_term* StatementWrapper::newPredicateTermWithObject(v8::Handle<v8::Object>
   raptor_term* predicateTerm = nullptr;
   v8::String::Utf8Value predicateString(predicateValue);
   if (predicateType->Equals(kURISymbol)) {
-    URI predicateURI(*predicateString, predicateValue->Length());
+    URI predicateURI(*predicateString, predicateValue->Utf8Length());
     predicateTerm = raptor_new_term_from_uri(World::raptorWorld(), predicateURI);
   }
   return predicateTerm;
@@ -213,21 +215,21 @@ raptor_term* StatementWrapper::newObjectTermWithObject(v8::Handle<v8::Object> co
   } else if (objectType->Equals(kBNodeSymbol)) {
     objectTerm = raptor_new_term_from_counted_blank(World::raptorWorld(),
                                                     reinterpret_cast<byte_t*>(*objectString),
-                                                    objectValue->Length());
+                                                    objectValue->Utf8Length());
   } else if (objectType->Equals(kLiteralSymbol)) {
     if (object->Has(kLangSymbol)) {
       v8::Local<v8::String> objectLang = object->Get(kLangSymbol)->ToString();
       v8::Local<v8::String> langString = v8::Local<v8::String>(objectLang);
       objectTerm = raptor_new_term_from_counted_literal(World::raptorWorld(),
                                                         reinterpret_cast<byte_t*>(*objectString),
-                                                        objectValue->Length(),
+                                                        objectValue->Utf8Length(),
                                                         NULL,
                                                         reinterpret_cast<byte_t*>(*v8::String::Utf8Value(langString)),
                                                         objectLang->Length());
     } else {
       objectTerm = raptor_new_term_from_counted_literal(World::raptorWorld(),
                                                         reinterpret_cast<byte_t*>(*objectString),
-                                                        objectValue->Length(),
+                                                        objectValue->Utf8Length(),
                                                         NULL,
                                                         NULL,
                                                         0);
@@ -238,10 +240,10 @@ raptor_term* StatementWrapper::newObjectTermWithObject(v8::Handle<v8::Object> co
     if (object->Has(kDTypeSymbol)) {
       objectDType = object->Get(kDTypeSymbol)->ToString();
       dtypeString = v8::Local<v8::String>(objectDType);
-      URI dtypeURI(*v8::String::Utf8Value(dtypeString), objectDType->Length());
+      URI dtypeURI(*v8::String::Utf8Value(dtypeString), objectDType->Utf8Length());
       objectTerm = raptor_new_term_from_counted_literal(World::raptorWorld(),
                                                         reinterpret_cast<byte_t*>(*objectString),
-                                                        objectValue->Length(),
+                                                        objectValue->Utf8Length(),
                                                         dtypeURI,
                                                         NULL,
                                                         0);
