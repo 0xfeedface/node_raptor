@@ -15,7 +15,7 @@ function StreamParser(parser) {
 
     var self = this;
     this._parser.setStatementHandler(function (statement) {
-        self.emit('data', statement);
+        self.push(statement);
     });
     this._parser.setNamespaceHandler(function (namespaceURI, prefix) {
         self.emit('namespace', namespaceURI, prefix);
@@ -57,6 +57,7 @@ StreamParser.prototype._flush = function (cb) {
     } catch (e) {
         this.emit('error', e);
     }
+    this.push(null);
     cb();
 };
 
@@ -105,13 +106,11 @@ StreamSerializer.prototype.serializeEnd = function (statement) {
 };
 
 StreamSerializer.prototype._transform = function (chunk, encoding, cb) {
-    console.log('transform');
     StreamSerializer.prototype.serializeStatement.call(this, chunk);
     cb();
 };
 
 StreamSerializer.prototype._flush = function (cb) {
-    console.log('flush');
     StreamSerializer.prototype.serializeEnd.call(this);
     cb();
 };
