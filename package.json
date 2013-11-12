@@ -15,7 +15,7 @@
     "url" : "http://github.com/0xfeedface/node_raptor.git"
   },
   "engines": {
-    "node": ">=0.8.0"
+    "node": ">=0.10.0"
   },
   "main": "index.js",
   "directories": {
