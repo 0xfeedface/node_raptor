@@ -1,20 +1,20 @@
-Raptor RDF parser and serializer bindings for Node.js
-=====================================================
+node\_raptor -- libraptor2 bindings for Node.js
+==============================================
 
 News
-====
+----
 
-Complete rewrite to provide a more idiomatic Node interface based on [Streams2](http://blog.nodejs.org/2012/12/20/streams2/).
+Complete rewrite that provides a more idiomatic Node interface based on [streams2](http://blog.nodejs.org/2012/12/20/streams2/).
 
 Synopsis
-========
+--------
 
 [Raptor](http://librdf.org/raptor/) is a mature RDF parsing and serializing library written in C by Dave Beckett. It is part of Redland, the RDF handling and storage library.
 
 These bindings support [libraptor2](http://librdf.org/raptor/api/) only (v1.9.0 or greater).
 
 Building
-========
+--------
 
 A version of `libraptor2` needs to be installed on your system
 The default prefix is `/usr/local`.
@@ -22,7 +22,7 @@ Use you preferred package manager to install raptor.
 Then run `npm install`.
 
 General Usage
-=============
+-------------
 
 Include raptor bindings with
 
@@ -36,9 +36,9 @@ You can create parsers or serializers for certain syntax types like so:
 If you leave out the syntax type for the serializer Raptor will try to guess the syntax by reading some data.
 
 API
-===
+---
 
-There is a low-level API and a Streams2 interface.
+There is a low-level API and a streams2 interface.
 You are highly encourages to use the streaming interface.
 See `examples/stream.js` for a minimal stream-based example.
 
@@ -46,8 +46,7 @@ The stream API allows you to pipe any Node readable stream (e.g. `fs.ReadStream`
 
 Note that Node 0.10 or greater is required for that feature. If you are using an older Node version, check out the `pre-Node-0.10` branch.
 
-Declaring base URIs
--------------------
+### Declaring base URIs
 
 Raptor is very picky about base URIs.
 If a syntax might require a base URI you have to declare one.
@@ -59,12 +58,11 @@ Use
 
 on a serializer or parser instance *before* piping any data or statements into it.
 
-Emitted Events (Streams2 API)
------------------------------
+### Emitted Events (streams2 API)
 
 On the following conditions, events are emitted:
 
-### A new statement was parsed
+#### A new statement was parsed
 
     parser.on('data', function (statement) {
         // do something with statement
@@ -76,29 +74,29 @@ Statements are exposed with the following structure:
         subject: {
             type: 'uri',                                 /* 'uri' or 'bnode' */
             value: 'http://example.com/exampleResource'
-        }, 
+        },
         predicate: {
             type: 'uri',                                     /* always 'uri' */
             value: 'http://example.com/exampleProperty'
-        }, 
+        },
         object: {
-            type: 'typed-literal',                         /* 'uri', 'literal', 
+            type: 'typed-literal',                         /* 'uri', 'literal',
                                                  'typed-literal', or 'bnode' */
-            value: 'An example literal value', 
+            value: 'An example literal value',
             datatype: 'http://www.w3.org/2001/XMLSchema#string'
-        }, 
+        },
         toString: function () {
                                      /* return statement as N-triples string */
         }
     }
 
-### A namespace has been declared
+#### A namespace has been declared
 
     parser.on('namespace', function (prefix, namespaceURI) {
         // handle namespace event
     });
 
-### A message has been retrieved
+#### A message has been retrieved
 
     parser.on('message', function (message) {
         // log errors and warnings synchronously
