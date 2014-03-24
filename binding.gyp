@@ -19,10 +19,16 @@
         "libraries": [ "-lraptor2" ]
     },
     "conditions": [
+        [ "OS!='win'", {
+            "variables": {
+                "raptor_prefix": "/usr"
+            },
+        "cflags_cc": [ "-std=c++11", "-fexceptions" ]
+        } ],
         [ "OS=='mac'", {
-	    "variables": {
-		"raptor_prefix": "/usr/local"
-	    },
+        "variables": {
+        "raptor_prefix": "/usr/local"
+        },
             "xcode_settings": {
                 "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
                 "OTHER_CPLUSPLUSFLAGS": [
@@ -31,12 +37,6 @@
                     "-mmacosx-version-min=10.7"
                 ]
             }
-        } ],
-        [ "OS!='win'", {
-	    "variables": {
-		"raptor_prefix": "/usr"
-	    },
-	    "cflags_cc": [ "-std=c++11", "-fexceptions" ]
-	} ]
+        } ]
     ]
 } ] }
