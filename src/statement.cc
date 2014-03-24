@@ -17,6 +17,7 @@
 #include <string>
 #include <raptor.h>
 #include <cstdlib> // malloc
+#include <stdexcept>
 
 #include "statement.h"
 

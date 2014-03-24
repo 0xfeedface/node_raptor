@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <stdexcept>
 #include "statement_wrapper.h"
 #include "uri.h"
 
