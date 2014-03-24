@@ -58,7 +58,7 @@ void Serializer::setEndHandler(end_handler_t const& handler)
 void Serializer::setNamespace(Namespace const& nspace)
 {
   raptor_serializer_set_namespace(serializer_,
-                                  nspace.URI(),
+                                  nspace.ID(),
                                   reinterpret_cast<byte_t const*>(nspace.prefix().c_str()));
 }
 

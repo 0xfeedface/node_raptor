@@ -202,7 +202,7 @@ ParserWrapper::ParserWrapper(v8::Handle<v8::Value> syntaxName)
     if (!namespaceHandler_.IsEmpty()) {
       v8::HandleScope scope;
       const unsigned argc = 2;
-      std::string namespaceURI(nspace.URI());
+      std::string namespaceURI(nspace.ID());
       v8::Local<v8::Value> argv[argc] {
         v8::Local<v8::Value>::New(v8::String::New(namespaceURI.data(), namespaceURI.length())),
         v8::Local<v8::Value>::New(v8::String::New(nspace.prefix().data(), nspace.prefix().length()))

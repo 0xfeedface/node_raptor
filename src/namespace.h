@@ -24,9 +24,9 @@ public:
   explicit Namespace(raptor_namespace const* ns)
     : URI_(raptor_namespace_get_uri(ns)),
       prefix_(reinterpret_cast<const char*>(raptor_namespace_get_prefix(ns))) {}
-  URI const& URI() const { return URI_; }
+  URI const& ID() const { return URI_; }
   std::string const& prefix() const { return prefix_; }
 private:
-  class URI URI_;
+  URI URI_;
   std::string prefix_;
 };
