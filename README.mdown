@@ -17,8 +17,9 @@ Building
 --------
 
 A version of `libraptor2` needs to be installed on your system
-The default prefix is `/usr/local`.
-Use you preferred package manager to install raptor.
+The default prefix is `/usr/local` for Mac OS X (installed with [brew](http://brew.sh)) or `/usr` on Ubuntu (installed with `apt-get`).
+The build script already recognizes those two.
+If your path differs (try `which rapper | sed -e "s/\/bin.*$//g"`) you need to update `binding.gyp` accordingly.
 Then run `npm install`.
 
 General Usage
